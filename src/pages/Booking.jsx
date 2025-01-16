@@ -7,7 +7,10 @@ import EquipmentList from '../components/EquipmentList';
 
 export default function Booking() {
   const dispatch = useDispatch();
-  const { startDate, endDate } = useSelector((state) => state.booking);
+  const { startDate, endDate } = useSelector((state) => ({
+    startDate: state.bookings.startDate ? new Date(state.bookings.startDate) : null,
+    endDate: state.bookings.endDate ? new Date(state.bookings.endDate) : null,
+  }));
 
   return (
     <Box>

@@ -1,59 +1,55 @@
 import express from 'express';
 import Booking from '../models/Booking.js';
-import Equipment from '../models/Equipment.js';
-import { auth, adminAuth } from '../middleware/auth.js';
+import { sendBookingConfirmation } from '../services/emailService.js';
 
 const router = express.Router();
 
-// Alle Buchungen abrufen (nur Admin)
-router.get('/', adminAuth, async (req, res) => {
+// Neue Buchung erstellen
+router.post('/', async (req, res) => {
+  const booking = new Booking(req.body);
   try {
-    const bookings = await Booking.find().populate('equipment');
+    const savedBooking = await booking.save();
+    const populatedBooking = await Booking.findById(savedBooking._id).populate('items.productId');
+    
+    // E-Mail-Bestätigung senden
+    try {
+      await sendBookingConfirmation(populatedBooking);
+    } catch (emailError) {
+      console.error('Fehler beim Senden der E-Mail-Bestätigung:', emailError);
+      // Wir werfen hier keinen Fehler, da die Buchung trotzdem erfolgreich war
+    }
+
+    res.status(201).json(populatedBooking);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
+// Alle Buchungen abrufen
+router.get('/', async (req, res) => {
+  try {
+    const bookings = await Booking.find().populate('items.productId');
     res.json(bookings);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 });
 
-// Neue Buchung erstellen
-router.post('/', async (req, res) => {
+// Einzelne Buchung abrufen
+router.get('/:id', async (req, res) => {
   try {
-    const { equipment, startDate, endDate, user } = req.body;
-
-    // Verfügbarkeit prüfen
-    const overlappingBookings = await Booking.find({
-      equipment: { $in: equipment },
-      status: 'CONFIRMED',
-      $or: [
-        {
-          startDate: { $lte: endDate },
-          endDate: { $gte: startDate }
-        }
-      ]
-    });
-
-    if (overlappingBookings.length > 0) {
-      return res.status(400).json({ 
-        message: 'Ein oder mehrere Geräte sind im gewählten Zeitraum nicht verfügbar' 
-      });
+    const booking = await Booking.findById(req.params.id).populate('items.productId');
+    if (!booking) {
+      return res.status(404).json({ message: 'Buchung nicht gefunden' });
     }
-
-    const booking = new Booking({
-      equipment,
-      startDate,
-      endDate,
-      user
-    });
-
-    await booking.save();
-    res.status(201).json(booking);
+    res.json(booking);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(500).json({ message: error.message });
   }
 });
 
-// Buchungsstatus aktualisieren (nur Admin)
-router.patch('/:id/status', adminAuth, async (req, res) => {
+// Buchungsstatus aktualisieren
+router.patch('/:id/status', async (req, res) => {
   try {
     const { status } = req.body;
     const booking = await Booking.findByIdAndUpdate(
@@ -61,30 +57,24 @@ router.patch('/:id/status', adminAuth, async (req, res) => {
       { status },
       { new: true }
     );
-
     if (!booking) {
       return res.status(404).json({ message: 'Buchung nicht gefunden' });
     }
-
     res.json(booking);
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
 });
 
-// Buchung stornieren
+// Buchung löschen
 router.delete('/:id', async (req, res) => {
   try {
     const booking = await Booking.findById(req.params.id);
-    
     if (!booking) {
       return res.status(404).json({ message: 'Buchung nicht gefunden' });
     }
-
-    booking.status = 'CANCELLED';
-    await booking.save();
-    
-    res.json({ message: 'Buchung erfolgreich storniert' });
+    await booking.remove();
+    res.json({ message: 'Buchung erfolgreich gelöscht' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
