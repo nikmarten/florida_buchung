@@ -20,9 +20,11 @@ const port = process.env.PORT || 5000;
 // CORS Konfiguration
 app.use(cors({
   origin: [
-    'https://florida-buchung.vercel.app',
+    'http://website.livinik.de',
+    'https://website.livinik.de',
     'http://localhost:5173',
-    'http://localhost:5000'
+    'http://localhost:5000',
+    'http://192.168.0.23:8080'
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
