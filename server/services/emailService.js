@@ -11,6 +11,41 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+// HTML-Template für die Admin-Benachrichtigung
+const createAdminNotificationHTML = (booking) => {
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('de-DE');
+  };
+
+  const itemsList = booking.items.map(item => `
+    <li>
+      ${item.productId.name}
+      <br>
+      Zeitraum: ${formatDate(item.startDate)} - ${formatDate(item.endDate)}
+    </li>
+  `).join('');
+
+  return `
+    <h2>Neue Buchung eingegangen</h2>
+    
+    <h3>Kundendaten:</h3>
+    <p>
+      <strong>Name:</strong> ${booking.customerName}<br>
+      <strong>E-Mail:</strong> ${booking.customerEmail}
+    </p>
+    
+    <h3>Gebuchte Produkte:</h3>
+    <ul>
+      ${itemsList}
+    </ul>
+
+    ${booking.notes ? `<h3>Kundennotizen:</h3><p>${booking.notes}</p>` : ''}
+    
+    <p>Buchung erstellt am: ${new Date(booking.createdAt).toLocaleString('de-DE')}</p>
+  `;
+};
+
 // HTML-Template für die Buchungsbestätigung
 const createBookingConfirmationHTML = (booking) => {
   const formatDate = (dateString) => {
@@ -18,7 +53,6 @@ const createBookingConfirmationHTML = (booking) => {
     return date.toLocaleDateString('de-DE');
   };
 
-  // Extrahiere den Vornamen (nimm das erste Wort des Namens)
   const firstName = booking.customerName.split(' ')[0];
 
   const itemsList = booking.items.map(item => `
@@ -50,15 +84,26 @@ const createBookingConfirmationHTML = (booking) => {
 // Funktion zum Senden der Buchungsbestätigung
 const sendBookingConfirmation = async (booking) => {
   try {
+    // E-Mail an den Kunden
     await transporter.sendMail({
       from: process.env.SMTP_FROM,
       to: booking.customerEmail,
       subject: '🎉 Deine Buchungsbestätigung - Florida Technik',
       html: createBookingConfirmationHTML(booking),
     });
+
+    // E-Mail an den Administrator
+    await transporter.sendMail({
+      from: process.env.SMTP_FROM,
+      to: process.env.ADMIN_EMAIL,
+      subject: 'Neue Buchung eingegangen - Florida Technik',
+      html: createAdminNotificationHTML(booking),
+    });
+
     console.log('Buchungsbestätigung wurde gesendet an:', booking.customerEmail);
+    console.log('Admin-Benachrichtigung wurde gesendet an:', process.env.ADMIN_EMAIL);
   } catch (error) {
-    console.error('Fehler beim Senden der Buchungsbestätigung:', error);
+    console.error('Fehler beim Senden der E-Mails:', error);
     throw error;
   }
 };
