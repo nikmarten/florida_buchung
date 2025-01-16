@@ -3,6 +3,7 @@ import axios from 'axios';
 
 const API_URL = 'http://localhost:5000/api';
 
+// Async Thunks
 export const fetchBookings = createAsyncThunk(
   'bookings/fetchBookings',
   async () => {
@@ -27,43 +28,28 @@ export const updateBookingStatus = createAsyncThunk(
   }
 );
 
-export const checkAvailability = createAsyncThunk(
-  'bookings/checkAvailability',
-  async ({ productId, startDate, endDate }) => {
-    const response = await axios.post(`${API_URL}/availability`, {
-      productId,
-      startDate,
-      endDate
-    });
-    return response.data;
-  }
-);
-
 const initialState = {
   startDate: null,
   endDate: null,
   items: [],
   status: 'idle',
-  error: null,
-  availability: {}
+  error: null
 };
 
 const bookingSlice = createSlice({
   name: 'booking',
   initialState,
   reducers: {
-    setBookingDates: (state, action) => {
-      if (action.payload.startDate !== undefined) {
-        state.startDate = action.payload.startDate;
-      }
-      if (action.payload.endDate !== undefined) {
-        state.endDate = action.payload.endDate;
-      }
+    setStartDate: (state, action) => {
+      state.startDate = action.payload;
     },
-    clearBookingDates: (state) => {
+    setEndDate: (state, action) => {
+      state.endDate = action.payload;
+    },
+    clearDates: (state) => {
       state.startDate = null;
       state.endDate = null;
-    }
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -86,16 +72,9 @@ const bookingSlice = createSlice({
         if (index !== -1) {
           state.items[index] = action.payload;
         }
-      })
-      .addCase(checkAvailability.fulfilled, (state, action) => {
-        state.availability = {
-          ...state.availability,
-          [action.meta.arg.productId]: action.payload.available
-        };
       });
   }
 });
 
-export const { setBookingDates, clearBookingDates } = bookingSlice.actions;
-
+export const { setStartDate, setEndDate, clearDates } = bookingSlice.actions;
 export default bookingSlice.reducer; 

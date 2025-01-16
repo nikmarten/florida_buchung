@@ -9,7 +9,8 @@ const productSchema = new mongoose.Schema({
   category: {
     type: String,
     required: true,
-    enum: ['CAMERA', 'AUDIO', 'LIGHTING', 'ACCESSORIES']
+    trim: true,
+    uppercase: true
   },
   description: {
     type: String,
@@ -37,6 +38,20 @@ const productSchema = new mongoose.Schema({
 productSchema.pre('save', function(next) {
   this.updatedAt = Date.now();
   next();
+});
+
+// Validierung der Kategorie gegen die Kategorien in der Datenbank
+productSchema.pre('validate', async function(next) {
+  try {
+    const Category = mongoose.model('Category');
+    const category = await Category.findOne({ value: this.category });
+    if (!category) {
+      this.invalidate('category', 'Category does not exist');
+    }
+    next();
+  } catch (error) {
+    next(error);
+  }
 });
 
 export default mongoose.models.Product || mongoose.model('Product', productSchema); 

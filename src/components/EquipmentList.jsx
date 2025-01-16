@@ -1,121 +1,67 @@
-import React, { useEffect, useState } from 'react';
-import {
-  Grid,
-  Card,
-  CardContent,
-  CardMedia,
-  Typography,
-  Button,
-  Box,
-  CircularProgress,
-  TextField,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  Alert
-} from '@mui/material';
+import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { Box, Grid, TextField, FormControl, Select, MenuItem, Typography, Card, CardContent, CardMedia, Button, Alert } from '@mui/material';
 import { addToCart } from '../store/cartSlice';
 import { fetchProducts } from '../store/productSlice';
 import { fetchCategories } from '../store/categorySlice';
 
 export default function EquipmentList() {
   const dispatch = useDispatch();
-  const { startDate, endDate } = useSelector((state) => state.booking);
-  const { items: products, status: productStatus, error: productError } = useSelector((state) => state.products);
-  const { items: categories, status: categoryStatus } = useSelector((state) => state.categories);
-  
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('ALL');
+  const { items: products, status: productsStatus, error: productsError } = useSelector((state) => state.products);
+  const { items: categories, status: categoriesStatus } = useSelector((state) => state.categories);
+  const { startDate, endDate } = useSelector((state) => state.booking);
 
   useEffect(() => {
-    if (productStatus === 'idle') {
+    if (productsStatus === 'idle') {
       dispatch(fetchProducts());
     }
-    if (categoryStatus === 'idle') {
+    if (categoriesStatus === 'idle') {
       dispatch(fetchCategories());
     }
-  }, [productStatus, categoryStatus, dispatch]);
-
-  const handleAddToCart = (item) => {
-    if (!startDate || !endDate) {
-      alert('Bitte wählen Sie zuerst einen Zeitraum aus');
-      return;
-    }
-
-    dispatch(addToCart({
-      id: Date.now(),
-      equipment: item,
-      startDate: startDate.toISOString(),
-      endDate: endDate.toISOString()
-    }));
-  };
+  }, [dispatch, productsStatus, categoriesStatus]);
 
   const handleCategoryChange = (event) => {
     setSelectedCategory(event.target.value);
   };
 
   const handleSearchChange = (event) => {
-    setSearchQuery(event.target.value);
+    setSearchTerm(event.target.value);
   };
 
-  const filteredProducts = products?.filter(product => {
-    const matchesSearch = searchQuery === '' || 
-      product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      product.description.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesCategory = selectedCategory === 'ALL' || product.category === selectedCategory;
-    
+  const filteredProducts = products?.filter(equipment => {
+    const matchesSearch = equipment.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = selectedCategory === 'ALL' || equipment.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
 
-  const allCategories = [
-    { value: 'ALL', label: 'Alle Kategorien' },
-    ...(categories || []).map(cat => ({
-      value: cat.value,
-      label: cat.label
-    }))
-  ];
+  const allCategories = [{ value: 'ALL', label: 'Alle Kategorien' }, ...(categories || [])];
+  const isTimeRangeSelected = startDate && endDate;
 
-  if (productStatus === 'loading' || categoryStatus === 'loading') {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
-        <CircularProgress />
-      </Box>
-    );
+  if (productsStatus === 'loading' || categoriesStatus === 'loading') {
+    return <Alert severity="info">Lade Produkte...</Alert>;
   }
 
-  if (productStatus === 'failed') {
-    return (
-      <Alert severity="error">
-        Fehler beim Laden der Produkte: {productError}
-      </Alert>
-    );
+  if (productsError) {
+    return <Alert severity="error">{productsError}</Alert>;
   }
 
   return (
-    <Box sx={{ 
-      display: 'flex', 
-      flexDirection: 'column', 
-      width: '100%',
-      maxWidth: '100%'
-    }}>
-      <Box sx={{ 
-        mb: { xs: 2, sm: 4 }, 
-        display: 'flex', 
-        gap: { xs: 1, sm: 3 },
-        width: '100%',
-        flexDirection: { xs: 'column', sm: 'row' }
-      }}>
-        <FormControl sx={{ width: '100%', minWidth: { sm: 250 } }}>
-          <InputLabel id="category-select-label">Kategorie</InputLabel>
+    <Box>
+      <Box sx={{ mb: 3, display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
+        <TextField
+          label="Suche"
+          variant="outlined"
+          value={searchTerm}
+          onChange={handleSearchChange}
+          sx={{ flexGrow: 1, maxWidth: { sm: 400 } }}
+        />
+        <FormControl sx={{ minWidth: 200 }}>
           <Select
-            labelId="category-select-label"
             value={selectedCategory}
-            label="Kategorie"
             onChange={handleCategoryChange}
-            size={isMobile ? "small" : "medium"}
+            displayEmpty
           >
             {allCategories.map((category) => (
               <MenuItem key={category.value} value={category.value}>
@@ -124,76 +70,46 @@ export default function EquipmentList() {
             ))}
           </Select>
         </FormControl>
-        
-        <TextField
-          label="Suche"
-          variant="outlined"
-          value={searchQuery}
-          onChange={handleSearchChange}
-          size={isMobile ? "small" : "medium"}
-          fullWidth
-          sx={{ flexGrow: 1 }}
-        />
       </Box>
 
-      {!filteredProducts || filteredProducts.length === 0 ? (
-        <Alert severity="info" sx={{ width: '100%' }}>Keine Ausrüstung gefunden.</Alert>
+      {filteredProducts?.length === 0 ? (
+        <Alert severity="info">Keine Produkte gefunden.</Alert>
       ) : (
-        <Grid container spacing={{ xs: 2, sm: 3 }} sx={{ width: '100%' }}>
-          {filteredProducts.map((equipment) => (
-            <Grid item xs={12} sm={6} md={4} lg={3} key={equipment._id}>
+        <Grid container spacing={3}>
+          {filteredProducts?.map((equipment) => (
+            <Grid item key={equipment._id} xs={12} sm={6} md={4}>
               <Card 
                 sx={{ 
-                  height: '100%',
-                  display: 'flex',
+                  height: '100%', 
+                  display: 'flex', 
                   flexDirection: 'column',
-                  transition: 'transform 0.2s, box-shadow 0.2s',
                   '&:hover': {
-                    transform: { xs: 'none', sm: 'translateY(-4px)' },
-                    boxShadow: 4
+                    boxShadow: 6
                   }
                 }}
               >
                 <CardMedia
                   component="img"
-                  height={{ xs: 160, sm: 200 }}
-                  image={equipment.imageUrl}
+                  height="200"
+                  image={equipment.imageUrl || 'https://via.placeholder.com/200'}
                   alt={equipment.name}
-                  sx={{ 
-                    objectFit: 'cover',
-                    backgroundColor: 'grey.100'
-                  }}
                 />
-                <CardContent sx={{ flexGrow: 1, p: { xs: 1.5, sm: 2 } }}>
-                  <Typography 
-                    gutterBottom 
-                    variant="h6" 
-                    component="h2"
-                    sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' } }}
-                  >
+                <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+                  <Typography gutterBottom variant="h6" component="h2">
                     {equipment.name}
                   </Typography>
-                  <Typography 
-                    variant="body2" 
-                    color="text.secondary" 
-                    paragraph
-                    sx={{ 
-                      fontSize: { xs: '0.875rem', sm: '1rem' },
-                      mb: { xs: 1, sm: 2 }
-                    }}
-                  >
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                     {equipment.description}
                   </Typography>
-                  <Box sx={{ mt: 'auto', pt: { xs: 1, sm: 2 } }}>
-                    <Button
-                      variant="contained"
-                      fullWidth
-                      onClick={() => handleAddToCart(equipment)}
-                      size={isMobile ? "medium" : "large"}
-                    >
-                      Zum Warenkorb hinzufügen
-                    </Button>
-                  </Box>
+                  <Button
+                    variant={isTimeRangeSelected ? "contained" : "outlined"}
+                    color="primary"
+                    onClick={() => dispatch(addToCart({ ...equipment, startDate, endDate }))}
+                    disabled={!isTimeRangeSelected}
+                    sx={{ mt: 'auto' }}
+                  >
+                    {isTimeRangeSelected ? "In den Warenkorb" : "Zeitraum auswählen"}
+                  </Button>
                 </CardContent>
               </Card>
             </Grid>
