@@ -5,12 +5,12 @@ import categoryReducer from './categorySlice';
 import bookingReducer from './bookingSlice';
 import authReducer from './authSlice';
 
-export const store = configureStore({
+const store = configureStore({
   reducer: {
     cart: cartReducer,
     products: productReducer,
     categories: categoryReducer,
-    booking: bookingReducer,
+    bookings: bookingReducer,
     auth: authReducer,
   },
 });

@@ -1,42 +1,39 @@
 import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
-import { LocalizationProvider } from '@mui/x-date-pickers';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { de } from 'date-fns/locale';
+import { Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
+import Booking from './pages/Booking';
+import Checkout from './pages/Checkout';
+import BookingConfirmation from './pages/BookingConfirmation';
+import Login from './pages/Login';
 import AdminLayout from './components/admin/AdminLayout';
 import AdminProducts from './components/admin/AdminProducts';
 import AdminCategories from './components/admin/AdminCategories';
 import AdminBookings from './components/admin/AdminBookings';
-import Booking from './pages/Booking';
-import Login from './pages/Login';
 import ProtectedRoute from './components/ProtectedRoute';
 
-function App() {
+export default function App() {
   return (
-    <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={de}>
-      <Routes>
-        <Route path="/" element={<Layout />}>
-          <Route index element={<Navigate to="/booking" replace />} />
-          <Route path="booking" element={<Booking />} />
-          <Route path="login" element={<Login />} />
-          <Route
-            path="admin/*"
-            element={
-              <ProtectedRoute>
-                <AdminLayout />
-              </ProtectedRoute>
-            }
-          >
-            <Route index element={<Navigate to="products" replace />} />
-            <Route path="products" element={<AdminProducts />} />
-            <Route path="categories" element={<AdminCategories />} />
-            <Route path="bookings" element={<AdminBookings />} />
-          </Route>
+    <Routes>
+      <Route path="/" element={<Layout />}>
+        <Route index element={<Booking />} />
+        <Route path="booking" element={<Booking />} />
+        <Route path="checkout" element={<Checkout />} />
+        <Route path="confirmation/:bookingId" element={<BookingConfirmation />} />
+        <Route path="login" element={<Login />} />
+        <Route
+          path="admin"
+          element={
+            <ProtectedRoute>
+              <AdminLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<AdminProducts />} />
+          <Route path="products" element={<AdminProducts />} />
+          <Route path="categories" element={<AdminCategories />} />
+          <Route path="bookings" element={<AdminBookings />} />
         </Route>
-      </Routes>
-    </LocalizationProvider>
+      </Route>
+    </Routes>
   );
 }
-
-export default App;
