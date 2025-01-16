@@ -39,7 +39,7 @@ export default function Home() {
           mb: { xs: 4, sm: 6, md: 8 },
           py: { xs: 4, sm: 6, md: 8 },
           px: { xs: 2, sm: 3, md: 4 },
-          background: 'linear-gradient(45deg, #2196f3 30%, #64b5f6 90%)',
+          background: 'linear-gradient(45deg, #37474f 30%, #546e7a 90%)',
           color: 'white',
           borderRadius: { xs: '0 0 20px 20px', sm: '0 0 40px 40px' },
           width: '100%'
