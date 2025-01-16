@@ -116,19 +116,6 @@ export default function Navbar() {
 
             {isMobile ? (
               <Box sx={{ display: 'flex', gap: 1 }}>
-                <Tooltip title={mode === 'light' ? 'Dark Mode' : 'Light Mode'}>
-                  <ThemeSwitch
-                    checked={mode === 'dark'}
-                    onChange={toggleMode}
-                  />
-                </Tooltip>
-                <IconButton
-                  color="inherit"
-                  onClick={handleMenuOpen}
-                  size="large"
-                >
-                  <MenuIcon />
-                </IconButton>
                 <IconButton 
                   color="inherit" 
                   onClick={() => setCartOpen(true)}
@@ -137,6 +124,13 @@ export default function Navbar() {
                   <Badge badgeContent={cartItems.length} color="error">
                     <ShoppingCartIcon />
                   </Badge>
+                </IconButton>
+                <IconButton
+                  color="inherit"
+                  onClick={handleMenuOpen}
+                  size="large"
+                >
+                  <MenuIcon />
                 </IconButton>
                 <Menu
                   anchorEl={anchorEl}
@@ -152,10 +146,30 @@ export default function Navbar() {
                   }}
                 >
                   <MenuItem onClick={() => handleNavigation('/booking')}>
-                    Ausrüstung buchen
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <HomeIcon />
+                      Ausrüstung buchen
+                    </Box>
                   </MenuItem>
                   <MenuItem onClick={() => handleNavigation('/admin')}>
-                    Admin
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <AdminIcon />
+                      Admin
+                    </Box>
+                  </MenuItem>
+                  <MenuItem onClick={(e) => e.stopPropagation()}>
+                    <Box sx={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'space-between',
+                      width: '100%'
+                    }}>
+                      <span>{mode === 'light' ? 'Dark Mode' : 'Light Mode'}</span>
+                      <ThemeSwitch
+                        checked={mode === 'dark'}
+                        onChange={toggleMode}
+                      />
+                    </Box>
                   </MenuItem>
                 </Menu>
               </Box>
