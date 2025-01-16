@@ -28,11 +28,13 @@ export default function BookingConfirmation() {
   useEffect(() => {
     const fetchBooking = async () => {
       try {
+        console.log('Fetching booking from:', `${API_URL}/bookings/${bookingId}`);
         const response = await axios.get(`${API_URL}/bookings/${bookingId}`);
+        console.log('Booking response:', response.data);
         setBooking(response.data);
       } catch (err) {
+        console.error('Error fetching booking:', err.response || err);
         setError('Buchung konnte nicht geladen werden.');
-        console.error('Error fetching booking:', err);
       } finally {
         setLoading(false);
       }
