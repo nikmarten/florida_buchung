@@ -261,7 +261,7 @@ const AdminBookings = () => {
                 {selectedBooking.items.map((item, index) => (
                   <Box key={index} sx={{ mb: 2 }}>
                     <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
-                      {item.productId?.name}
+                      {item.productId?.name || 'Unbekanntes Produkt'}
                     </Typography>
                     <Typography variant="body2">
                       Zeitraum: {format(parseISO(item.startDate), 'dd.MM.yyyy')} - {format(parseISO(item.endDate), 'dd.MM.yyyy')}
