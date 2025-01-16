@@ -1,7 +1,8 @@
 import { createTheme } from '@mui/material/styles';
 
-const theme = createTheme({
+const getTheme = (mode) => createTheme({
   palette: {
+    mode,
     primary: {
       main: '#37474f',
       light: '#62727b',
@@ -15,12 +16,12 @@ const theme = createTheme({
       contrastText: '#fff',
     },
     background: {
-      default: '#f5f5f5',
-      paper: '#ffffff',
+      default: mode === 'light' ? '#f5f5f5' : '#121212',
+      paper: mode === 'light' ? '#ffffff' : '#1e1e1e',
     },
     text: {
-      primary: '#37474f',
-      secondary: '#546e7a',
+      primary: mode === 'light' ? '#37474f' : '#ffffff',
+      secondary: mode === 'light' ? '#546e7a' : '#b0bec5',
     },
   },
   typography: {
@@ -107,7 +108,7 @@ const theme = createTheme({
     MuiAppBar: {
       styleOverrides: {
         root: {
-          backgroundColor: '#37474f',
+          backgroundColor: mode === 'light' ? '#37474f' : '#1e1e1e',
           boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
         },
       },
@@ -115,4 +116,4 @@ const theme = createTheme({
   },
 });
 
-export default theme; 
+export default getTheme; 
