@@ -17,10 +17,16 @@ dotenv.config({ path: join(__dirname, '../.env') });
 const app = express();
 const port = process.env.PORT || 5000;
 
+// CORS Konfiguration
 app.use(cors({
-  origin: '*',
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  origin: [
+    'https://florida-buchung.vercel.app',
+    'http://localhost:5173',
+    'http://localhost:5000'
+  ],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
 }));
 
 app.use(express.json());
