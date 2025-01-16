@@ -1,78 +1,73 @@
 import React from 'react';
-import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import {
-  Box,
-  Drawer,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
-  ListItemButton,
-  Typography,
-  useTheme,
-  useMediaQuery
-} from '@mui/material';
-import {
-  Inventory2 as Inventory2Icon,
-  Category as CategoryIcon,
-  BookOnline as BookingsIcon
-} from '@mui/icons-material';
-
-const DRAWER_WIDTH = 240;
-
-const menuItems = [
-  { text: 'Produkte', icon: <Inventory2Icon />, path: '/admin/products' },
-  { text: 'Kategorien', icon: <CategoryIcon />, path: '/admin/categories' },
-  { text: 'Buchungen', icon: <BookingsIcon />, path: '/admin/bookings' }
-];
+import { useNavigate, useLocation, Outlet } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import { Box, Container, Paper, Tabs, Tab, Button } from '@mui/material';
+import { logout } from '../../store/authSlice';
 
 export default function AdminLayout() {
   const navigate = useNavigate();
   const location = useLocation();
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const dispatch = useDispatch();
+
+  const handleLogout = () => {
+    dispatch(logout());
+    navigate('/login');
+  };
+
+  const getActiveTab = () => {
+    const path = location.pathname.split('/').pop();
+    switch (path) {
+      case 'products':
+        return 0;
+      case 'categories':
+        return 1;
+      case 'bookings':
+        return 2;
+      default:
+        return 0;
+    }
+  };
+
+  const handleTabChange = (event, newValue) => {
+    switch (newValue) {
+      case 0:
+        navigate('/admin/products');
+        break;
+      case 1:
+        navigate('/admin/categories');
+        break;
+      case 2:
+        navigate('/admin/bookings');
+        break;
+      default:
+        navigate('/admin/products');
+    }
+  };
 
   return (
-    <Box sx={{ display: 'flex' }}>
-      <Drawer
-        variant={isMobile ? 'temporary' : 'permanent'}
-        sx={{
-          width: DRAWER_WIDTH,
-          flexShrink: 0,
-          '& .MuiDrawer-paper': {
-            width: DRAWER_WIDTH,
-            boxSizing: 'border-box',
-            top: { xs: 0, sm: 64 }, // Berücksichtigt die AppBar-Höhe auf Desktop
-            height: { xs: '100%', sm: 'calc(100% - 64px)' }
-          },
-        }}
-      >
-        <Box sx={{ overflow: 'auto', mt: { xs: 0, sm: 2 } }}>
-          <List>
-            {menuItems.map((item) => (
-              <ListItem key={item.text} disablePadding>
-                <ListItemButton
-                  selected={location.pathname === item.path}
-                  onClick={() => navigate(item.path)}
-                >
-                  <ListItemIcon>{item.icon}</ListItemIcon>
-                  <ListItemText primary={item.text} />
-                </ListItemButton>
-              </ListItem>
-            ))}
-          </List>
+    <Container maxWidth="lg">
+      <Box sx={{ width: '100%', mt: 3 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+          <Paper sx={{ flexGrow: 1, mr: 2 }}>
+            <Tabs
+              value={getActiveTab()}
+              onChange={handleTabChange}
+              variant="fullWidth"
+              sx={{ borderBottom: 1, borderColor: 'divider' }}
+            >
+              <Tab label="Produkte" />
+              <Tab label="Kategorien" />
+              <Tab label="Buchungen" />
+            </Tabs>
+          </Paper>
+          <Button variant="outlined" color="primary" onClick={handleLogout}>
+            Logout
+          </Button>
         </Box>
-      </Drawer>
-      <Box
-        component="main"
-        sx={{
-          flexGrow: 1,
-          p: 3,
-          width: { sm: `calc(100% - ${DRAWER_WIDTH}px)` }
-        }}
-      >
-        <Outlet />
+        <Paper sx={{ p: 3 }}>
+          <Outlet />
+        </Paper>
       </Box>
-    </Box>
+    </Container>
   );
 } 

@@ -3,14 +3,16 @@ import { createTheme } from '@mui/material/styles';
 const theme = createTheme({
   palette: {
     primary: {
-      main: '#2196f3',
-      light: '#64b5f6',
-      dark: '#1976d2',
+      main: '#1976d2',
+      light: '#42a5f5',
+      dark: '#1565c0',
+      contrastText: '#fff',
     },
     secondary: {
-      main: '#f50057',
-      light: '#ff4081',
-      dark: '#c51162',
+      main: '#9c27b0',
+      light: '#ba68c8',
+      dark: '#7b1fa2',
+      contrastText: '#fff',
     },
     background: {
       default: '#f5f5f5',
@@ -26,40 +28,52 @@ const theme = createTheme({
     h1: {
       fontSize: '2.5rem',
       fontWeight: 500,
-      marginBottom: '1rem',
+      lineHeight: 1.2,
     },
-    h4: {
+    h2: {
+      fontSize: '2rem',
+      fontWeight: 500,
+      lineHeight: 1.3,
+    },
+    h3: {
       fontSize: '1.75rem',
       fontWeight: 500,
-      marginBottom: '0.75rem',
+      lineHeight: 1.4,
     },
-    h5: {
+    h4: {
       fontSize: '1.5rem',
       fontWeight: 500,
-      marginBottom: '0.5rem',
+      lineHeight: 1.4,
     },
-    h6: {
+    h5: {
       fontSize: '1.25rem',
       fontWeight: 500,
+      lineHeight: 1.4,
+    },
+    h6: {
+      fontSize: '1rem',
+      fontWeight: 500,
+      lineHeight: 1.4,
     },
     body1: {
       fontSize: '1rem',
-      lineHeight: 1.6,
+      lineHeight: 1.5,
+    },
+    body2: {
+      fontSize: '0.875rem',
+      lineHeight: 1.5,
     },
   },
   components: {
     MuiButton: {
       styleOverrides: {
         root: {
-          textTransform: 'none',
           borderRadius: 8,
+          textTransform: 'none',
           padding: '8px 24px',
-          fontSize: '1rem',
-        },
-        contained: {
-          boxShadow: 'none',
           '&:hover': {
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+            transform: 'translateY(-1px)',
+            boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
           },
         },
       },
@@ -68,20 +82,32 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           borderRadius: 12,
-          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-          transition: 'transform 0.2s, box-shadow 0.2s',
-          '&:hover': {
-            transform: 'translateY(-4px)',
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+        },
+      },
+    },
+    MuiTextField: {
+      styleOverrides: {
+        root: {
+          '& .MuiOutlinedInput-root': {
+            borderRadius: 8,
           },
         },
       },
     },
-    MuiPaper: {
+    MuiSelect: {
       styleOverrides: {
         root: {
-          borderRadius: 12,
-          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+          '& .MuiOutlinedInput-root': {
+            borderRadius: 8,
+          },
+        },
+      },
+    },
+    MuiAppBar: {
+      styleOverrides: {
+        root: {
+          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
         },
       },
     },
