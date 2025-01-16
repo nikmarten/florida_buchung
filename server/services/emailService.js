@@ -29,9 +29,9 @@ const createBookingConfirmationHTML = (booking) => {
   `).join('');
 
   return `
-    <h2>🎉 Super, deine Buchung ist bestätigt!</h2>
-    <p>Hey ${firstName},</p>
-    <p>toll, dass du dich für Florida Technik entschieden hast! Hier sind alle Details zu deiner Buchung:</p>
+    <h2>🎉 Deine Buchungsbestätigung</h2>
+    <p>Hi ${firstName},</p>
+    <p>hier sind die Details zu deiner Buchung:</p>
     
     <h3>🎯 Deine gebuchten Produkte:</h3>
     <ul>
@@ -40,7 +40,7 @@ const createBookingConfirmationHTML = (booking) => {
 
     ${booking.notes ? `<h3>📝 Deine Notizen:</h3><p>${booking.notes}</p>` : ''}
     
-    <p>Falls du noch Fragen hast, melde dich einfach - wir sind für dich da! 😊</p>
+    <p>Bei Fragen sind wir für dich da! 😊</p>
     
     <p>Beste Grüße<br>
     Dein Florida Technik Team 🚀</p>
@@ -53,7 +53,7 @@ const sendBookingConfirmation = async (booking) => {
     await transporter.sendMail({
       from: process.env.SMTP_FROM,
       to: booking.customerEmail,
-      subject: '🎉 Deine Buchung bei Florida Technik ist bestätigt!',
+      subject: '🎉 Deine Buchungsbestätigung - Florida Technik',
       html: createBookingConfirmationHTML(booking),
     });
     console.log('Buchungsbestätigung wurde gesendet an:', booking.customerEmail);

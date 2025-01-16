@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Box,
   Button,
@@ -19,7 +19,7 @@ import {
   Paper,
   CircularProgress
 } from '@mui/material';
-import { Edit as EditIcon, Delete as DeleteIcon, Add as AddIcon } from '@mui/icons-material';
+import { Edit as EditIcon, Delete as DeleteIcon, Add as AddIcon, Search as SearchIcon } from '@mui/icons-material';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchProducts, addProduct, updateProduct, deleteProduct } from '../../store/productSlice';
 import { fetchCategories } from '../../store/categorySlice';
@@ -37,6 +37,18 @@ export default function AdminProducts() {
     description: '',
     imageUrl: ''
   });
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('all');
+
+  // Filter products based on search query and selected category
+  const filteredProducts = useMemo(() => {
+    return products.filter(product => {
+      const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          product.description.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCategory = selectedCategory === 'all' || product.category === selectedCategory;
+      return matchesSearch && matchesCategory;
+    });
+  }, [products, searchQuery, selectedCategory]);
 
   useEffect(() => {
     if (status === 'idle') {
@@ -126,6 +138,39 @@ export default function AdminProducts() {
         </Button>
       </Box>
 
+      <Box sx={{ mb: 3, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+        <TextField
+          label="Produkt suchen"
+          variant="outlined"
+          size="small"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          sx={{ flexGrow: 1, minWidth: '200px' }}
+          InputProps={{
+            startAdornment: (
+              <Box sx={{ color: 'text.secondary', mr: 1 }}>
+                <SearchIcon />
+              </Box>
+            ),
+          }}
+        />
+        <TextField
+          select
+          label="Kategorie"
+          value={selectedCategory}
+          onChange={(e) => setSelectedCategory(e.target.value)}
+          size="small"
+          sx={{ minWidth: '200px' }}
+        >
+          <MenuItem value="all">Alle Kategorien</MenuItem>
+          {categories.map((category) => (
+            <MenuItem key={category.value} value={category.value}>
+              {category.label}
+            </MenuItem>
+          ))}
+        </TextField>
+      </Box>
+
       <TableContainer component={Paper}>
         <Table>
           <TableHead>
@@ -133,17 +178,37 @@ export default function AdminProducts() {
               <TableCell>Name</TableCell>
               <TableCell>Kategorie</TableCell>
               <TableCell>Beschreibung</TableCell>
-              <TableCell>Bild-URL</TableCell>
+              <TableCell>Bild</TableCell>
               <TableCell align="right">Aktionen</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {products.map((product) => (
+            {filteredProducts.map((product) => (
               <TableRow key={product._id}>
                 <TableCell>{product.name}</TableCell>
-                <TableCell>{getCategoryLabel(product.category)}</TableCell>
+                <TableCell>{product.category}</TableCell>
                 <TableCell>{product.description}</TableCell>
-                <TableCell>{product.imageUrl}</TableCell>
+                <TableCell>
+                  {product.imageUrl ? (
+                    <Box
+                      component="img"
+                      src={product.imageUrl}
+                      alt={product.name}
+                      sx={{
+                        width: 100,
+                        height: 100,
+                        objectFit: 'cover',
+                        borderRadius: 1,
+                        border: '1px solid',
+                        borderColor: 'divider'
+                      }}
+                    />
+                  ) : (
+                    <Typography variant="body2" color="text.secondary">
+                      Kein Bild
+                    </Typography>
+                  )}
+                </TableCell>
                 <TableCell align="right">
                   <IconButton 
                     size="small" 
