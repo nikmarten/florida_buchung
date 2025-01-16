@@ -16,6 +16,8 @@ import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 export default function BookingConfirmation() {
   const { bookingId } = useParams();
   const navigate = useNavigate();
@@ -26,7 +28,7 @@ export default function BookingConfirmation() {
   useEffect(() => {
     const fetchBooking = async () => {
       try {
-        const response = await axios.get(`http://localhost:5000/api/bookings/${bookingId}`);
+        const response = await axios.get(`${API_URL}/bookings/${bookingId}`);
         setBooking(response.data);
       } catch (err) {
         setError('Buchung konnte nicht geladen werden.');
