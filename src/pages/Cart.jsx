@@ -12,117 +12,132 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  IconButton
+  IconButton,
+  Grid
 } from '@mui/material';
 import { Delete as DeleteIcon } from '@mui/icons-material';
 import { removeFromCart } from '../store/cartSlice';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
+import { useNavigate } from 'react-router-dom';
 
 export default function Cart() {
   const dispatch = useDispatch();
   const cartItems = useSelector((state) => state.cart.items);
+  const navigate = useNavigate();
 
   const handleRemoveFromCart = (itemId) => {
     dispatch(removeFromCart(itemId));
   };
 
+  const formatDate = (date) => {
+    return format(new Date(date), 'PPpp', { locale: de });
+  };
+
   return (
-    <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-      <Container 
-        maxWidth="xl"
-        sx={{ 
-          maxWidth: '1400px !important',
-          margin: '0 auto',
-          width: '100%',
-          px: { xs: 2, sm: 3, md: 4 }
-        }}
-      >
-        <Typography 
-          variant="h4" 
-          component="h1" 
-          gutterBottom
-          sx={{ 
-            mb: { xs: 3, sm: 4 },
-            fontSize: { xs: '1.5rem', sm: '2rem', md: '2.5rem' },
-            fontWeight: 600
-          }}
-        >
+    <Container maxWidth="lg">
+      <Box sx={{ mt: { xs: 2, sm: 4 }, mb: { xs: 4, sm: 8 } }}>
+        <Typography variant="h4" component="h1" gutterBottom>
           Warenkorb
         </Typography>
 
         {cartItems.length === 0 ? (
-          <Paper 
-            sx={{ 
-              p: { xs: 3, sm: 4 },
-              textAlign: 'center',
-              borderRadius: 2
-            }}
-          >
-            <Typography variant="h6" color="text.secondary">
-              Ihr Warenkorb ist leer
-            </Typography>
+          <Paper sx={{ p: { xs: 2, sm: 3 }, mt: 3 }}>
+            <Typography>Dein Warenkorb ist leer.</Typography>
+            <Button
+              variant="contained"
+              onClick={() => navigate('/booking')}
+              sx={{ mt: 2 }}
+            >
+              Zurück zur Buchung
+            </Button>
           </Paper>
         ) : (
-          <>
-            <TableContainer 
-              component={Paper}
-              sx={{ 
-                mb: { xs: 3, sm: 4 },
-                borderRadius: 2,
-                overflow: 'hidden'
-              }}
-            >
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Ausrüstung</TableCell>
-                    <TableCell>Startdatum</TableCell>
-                    <TableCell>Enddatum</TableCell>
-                    <TableCell align="right">Aktionen</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {cartItems.map((item) => (
-                    <TableRow key={item.id}>
-                      <TableCell>{item.equipment.name}</TableCell>
-                      <TableCell>
-                        {format(new Date(item.startDate), 'PPpp', { locale: de })}
-                      </TableCell>
-                      <TableCell>
-                        {format(new Date(item.endDate), 'PPpp', { locale: de })}
-                      </TableCell>
-                      <TableCell align="right">
-                        <IconButton
-                          onClick={() => handleRemoveFromCart(item.id)}
-                          color="error"
-                          size="small"
-                        >
-                          <DeleteIcon />
-                        </IconButton>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-            
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-              <Button 
-                variant="contained" 
-                color="primary"
-                size="large"
+          <Grid container spacing={3}>
+            <Grid item xs={12} md={8}>
+              <Paper sx={{ p: { xs: 2, sm: 3 }, mb: { xs: 2, sm: 3 } }}>
+                {cartItems.map((item) => (
+                  <Box
+                    key={item.id}
+                    sx={{
+                      py: 2,
+                      display: 'flex',
+                      flexDirection: { xs: 'column', sm: 'row' },
+                      alignItems: { xs: 'flex-start', sm: 'center' },
+                      gap: { xs: 2, sm: 3 },
+                      borderBottom: '1px solid',
+                      borderColor: 'divider',
+                      '&:last-child': { borderBottom: 0 }
+                    }}
+                  >
+                    <Box
+                      component="img"
+                      src={item.equipment.imageUrl || 'https://via.placeholder.com/200'}
+                      alt={item.equipment.name}
+                      sx={{
+                        width: { xs: '100%', sm: 150 },
+                        height: { xs: 200, sm: 100 },
+                        objectFit: 'cover',
+                        borderRadius: 1
+                      }}
+                    />
+                    <Box sx={{ flex: 1 }}>
+                      <Typography variant="h6" gutterBottom>
+                        {item.equipment.name}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" gutterBottom>
+                        Zeitraum: {formatDate(item.startDate)} - {formatDate(item.endDate)}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ 
+                      display: 'flex',
+                      flexDirection: { xs: 'row', sm: 'column' },
+                      gap: 1,
+                      width: { xs: '100%', sm: 'auto' }
+                    }}>
+                      <Button
+                        variant="outlined"
+                        color="error"
+                        onClick={() => handleRemoveFromCart(item.id)}
+                        fullWidth
+                        size="small"
+                      >
+                        Entfernen
+                      </Button>
+                    </Box>
+                  </Box>
+                ))}
+              </Paper>
+            </Grid>
+
+            <Grid item xs={12} md={4}>
+              <Paper 
                 sx={{ 
-                  px: { xs: 3, sm: 4 },
-                  py: { xs: 1, sm: 1.5 }
+                  p: { xs: 2, sm: 3 },
+                  position: { md: 'sticky' },
+                  top: 24
                 }}
               >
-                Zur Kasse
-              </Button>
-            </Box>
-          </>
+                <Typography variant="h6" gutterBottom>
+                  Zusammenfassung
+                </Typography>
+                <Typography gutterBottom>
+                  Anzahl Produkte: {cartItems.length}
+                </Typography>
+                <Button
+                  variant="contained"
+                  fullWidth
+                  size="large"
+                  onClick={() => navigate('/checkout')}
+                  sx={{ mt: 2 }}
+                >
+                  Zur Kasse
+                </Button>
+              </Paper>
+            </Grid>
+          </Grid>
         )}
-      </Container>
-    </Box>
+      </Box>
+    </Container>
   );
 } 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { Box, Grid, TextField, FormControl, Select, MenuItem, Typography, Card, CardContent, CardMedia, Button, Alert } from '@mui/material';
+import { Box, Grid, TextField, FormControl, Select, MenuItem, Typography, Card, CardContent, CardMedia, Button, Alert, InputLabel } from '@mui/material';
 import { addToCart } from '../store/cartSlice';
 import { fetchProducts } from '../store/productSlice';
 import { fetchCategories } from '../store/categorySlice';
@@ -11,10 +11,12 @@ export default function EquipmentList() {
   const dispatch = useDispatch();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('ALL');
+  const [sortOption, setSortOption] = useState('popularity');
   const { items: products, status: productsStatus, error: productsError } = useSelector((state) => state.products);
   const { items: categories, status: categoriesStatus } = useSelector((state) => state.categories);
   const { items: bookings } = useSelector((state) => state.bookings);
-  const { startDate, endDate } = useSelector((state) => state.bookings);
+  const startDate = useSelector((state) => state.bookings.startDate);
+  const endDate = useSelector((state) => state.bookings.endDate);
 
   useEffect(() => {
     if (productsStatus === 'idle') {
@@ -23,7 +25,7 @@ export default function EquipmentList() {
     if (categoriesStatus === 'idle') {
       dispatch(fetchCategories());
     }
-    // Lade auch die Buchungen, um die Verfügbarkeit zu prüfen
+    // Buchungen immer neu laden
     dispatch(fetchBookings());
   }, [dispatch, productsStatus, categoriesStatus]);
 
@@ -35,6 +37,10 @@ export default function EquipmentList() {
     setSearchTerm(event.target.value);
   };
 
+  const handleSortChange = (event) => {
+    setSortOption(event.target.value);
+  };
+
   // Prüfe, ob ein Produkt im gewünschten Zeitraum verfügbar ist
   const isProductAvailable = (productId) => {
     if (!startDate || !endDate || !bookings) return true;
@@ -42,51 +48,55 @@ export default function EquipmentList() {
     const desiredStart = new Date(startDate);
     const desiredEnd = new Date(endDate);
 
-    // Prüfe alle existierenden Buchungen für dieses Produkt
     const conflictingBooking = bookings.find(booking =>
       booking.items.some(item => {
         if (item.productId?._id !== productId) return false;
         
-        const bookedStart = parseISO(item.startDate);
-        const bookedEnd = parseISO(item.endDate);
+        const bookedStart = new Date(item.startDate);
+        const bookedEnd = new Date(item.endDate);
 
-        // Ein Konflikt besteht, wenn sich die Zeiträume überschneiden
-        // oder wenn Start- oder Endtag gleich sind
-        const isOverlapping = isWithinInterval(desiredStart, { start: bookedStart, end: bookedEnd }) ||
-                            isWithinInterval(desiredEnd, { start: bookedStart, end: bookedEnd }) ||
-                            isWithinInterval(bookedStart, { start: desiredStart, end: desiredEnd }) ||
-                            isSameDay(desiredStart, bookedStart) ||
-                            isSameDay(desiredEnd, bookedEnd);
-
-        return isOverlapping;
+        return (
+          isWithinInterval(desiredStart, { start: bookedStart, end: bookedEnd }) ||
+          isWithinInterval(desiredEnd, { start: bookedStart, end: bookedEnd }) ||
+          isWithinInterval(bookedStart, { start: desiredStart, end: desiredEnd }) ||
+          isSameDay(desiredStart, bookedStart) ||
+          isSameDay(desiredEnd, bookedEnd)
+        );
       })
     );
 
     return !conflictingBooking;
   };
 
-  const handleAddToCart = (equipment) => {
-    if (!startDate || !endDate) return;
-    
-    if (!isProductAvailable(equipment._id)) {
-      return; // Produkt ist nicht verfügbar
-    }
-    
-    dispatch(addToCart({
-      ...equipment,
-      startDate: new Date(startDate),
-      endDate: new Date(endDate)
-    }));
-  };
-
-  const filteredProducts = products?.filter(equipment => {
-    const matchesSearch = equipment.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === 'ALL' || equipment.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
+  // Filtere und sortiere die Produkte
+  const filteredAndSortedProducts = [...products]
+    .filter(product => {
+      const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          product.description.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesCategory = selectedCategory === 'ALL' || product.category === selectedCategory;
+      return matchesSearch && matchesCategory;
+    })
+    .sort((a, b) => {
+      switch (sortOption) {
+        case 'popularity':
+          return (b.bookingCount || 0) - (a.bookingCount || 0);
+        case 'alphabetical':
+          return a.name.localeCompare(b.name);
+        default:
+          return 0;
+      }
+    });
 
   const allCategories = [{ value: 'ALL', label: 'Alle Kategorien' }, ...(categories || [])];
   const isTimeRangeSelected = startDate && endDate;
+
+  const handleAddToCart = (equipment) => {
+    dispatch(addToCart({
+      equipment,
+      startDate,
+      endDate
+    }));
+  };
 
   if (productsStatus === 'loading' || categoriesStatus === 'loading') {
     return <Alert severity="info">Lade Produkte...</Alert>;
@@ -119,13 +129,24 @@ export default function EquipmentList() {
             ))}
           </Select>
         </FormControl>
+        <FormControl sx={{ minWidth: 200 }}>
+          <InputLabel>Sortierung</InputLabel>
+          <Select
+            value={sortOption}
+            onChange={handleSortChange}
+            label="Sortierung"
+          >
+            <MenuItem value="popularity">Nach Beliebtheit</MenuItem>
+            <MenuItem value="alphabetical">Alphabetisch</MenuItem>
+          </Select>
+        </FormControl>
       </Box>
 
-      {filteredProducts?.length === 0 ? (
+      {filteredAndSortedProducts?.length === 0 ? (
         <Alert severity="info">Keine Produkte gefunden.</Alert>
       ) : (
         <Grid container spacing={3}>
-          {filteredProducts?.map((equipment) => {
+          {filteredAndSortedProducts?.map((equipment) => {
             const available = isProductAvailable(equipment._id);
             return (
               <Grid item key={equipment._id} xs={12} sm={6} md={4}>

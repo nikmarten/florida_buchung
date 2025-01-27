@@ -71,13 +71,11 @@ export default function CartDrawer({ open, onClose }) {
                   sx={{ flexDirection: 'column', alignItems: 'flex-start', gap: 1 }}
                 >
                   <ListItemText
-                    primary={item.name}
+                    primary={item.equipment.name}
                     secondary={
-                      <>
-                        <Typography variant="body2" color="text.secondary">
-                          Zeitraum: {formatDate(item.startDate)} - {formatDate(item.endDate)}
-                        </Typography>
-                      </>
+                      <Box component="span">
+                        Zeitraum: {formatDate(item.startDate)} - {formatDate(item.endDate)}
+                      </Box>
                     }
                   />
                 </ListItem>

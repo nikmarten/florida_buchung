@@ -17,7 +17,9 @@ import {
   MenuItem,
   Typography,
   Paper,
-  CircularProgress
+  CircularProgress,
+  useMediaQuery,
+  useTheme
 } from '@mui/material';
 import { Edit as EditIcon, Delete as DeleteIcon, Add as AddIcon, Search as SearchIcon } from '@mui/icons-material';
 import { useDispatch, useSelector } from 'react-redux';
@@ -39,6 +41,9 @@ export default function AdminProducts() {
   });
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
+
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   // Filter products based on search query and selected category
   const filteredProducts = useMemo(() => {
@@ -125,27 +130,125 @@ export default function AdminProducts() {
     return <Box sx={{ p: 2 }}><Typography color="error">{error}</Typography></Box>;
   }
 
+  const MobileProductCard = ({ product }) => (
+    <Paper 
+      elevation={2}
+      sx={{ 
+        mb: 2, 
+        overflow: 'hidden',
+        '&:last-child': { mb: 0 }
+      }}
+    >
+      <Box sx={{ 
+        p: 2,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 2,
+        borderBottom: '1px solid',
+        borderColor: 'divider'
+      }}>
+        {product.imageUrl ? (
+          <Box
+            component="img"
+            src={product.imageUrl}
+            alt={product.name}
+            sx={{
+              width: 60,
+              height: 60,
+              objectFit: 'cover',
+              borderRadius: 1,
+              flexShrink: 0
+            }}
+          />
+        ) : (
+          <Box
+            sx={{
+              width: 60,
+              height: 60,
+              borderRadius: 1,
+              bgcolor: 'grey.200',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0
+            }}
+          >
+            <Typography variant="caption" color="text.secondary">
+              Kein Bild
+            </Typography>
+          </Box>
+        )}
+        <Box sx={{ flex: 1 }}>
+          <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
+            {product.name}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            {getCategoryLabel(product.category)}
+          </Typography>
+          <Typography variant="body2" color="primary" sx={{ mt: 0.5 }}>
+            {product.bookingCount || 0}x gebucht
+          </Typography>
+        </Box>
+      </Box>
+      <Box sx={{ p: 2 }}>
+        <Typography variant="body2" sx={{ mb: 2 }}>
+          {product.description}
+        </Typography>
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+          <Button
+            size="small"
+            startIcon={<EditIcon />}
+            onClick={() => handleOpenDialog(product)}
+          >
+            Bearbeiten
+          </Button>
+          <Button
+            size="small"
+            color="error"
+            startIcon={<DeleteIcon />}
+            onClick={() => handleDelete(product._id)}
+          >
+            Löschen
+          </Button>
+        </Box>
+      </Box>
+    </Paper>
+  );
+
   return (
     <Box sx={{ p: 2 }}>
-      <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <Box sx={{ 
+        mb: 3, 
+        display: 'flex', 
+        flexDirection: { xs: 'column', sm: 'row' }, 
+        gap: 2,
+        alignItems: { xs: 'stretch', sm: 'center' },
+        justifyContent: 'space-between'
+      }}>
         <Typography variant="h6">Produkte verwalten</Typography>
         <Button
           variant="contained"
           startIcon={<AddIcon />}
           onClick={() => handleOpenDialog()}
+          fullWidth={isMobile}
         >
           Produkt hinzufügen
         </Button>
       </Box>
 
-      <Box sx={{ mb: 3, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+      <Box sx={{ 
+        mb: 3, 
+        display: 'flex', 
+        flexDirection: { xs: 'column', sm: 'row' }, 
+        gap: 2 
+      }}>
         <TextField
           label="Produkt suchen"
           variant="outlined"
           size="small"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          sx={{ flexGrow: 1, minWidth: '200px' }}
+          sx={{ flexGrow: 1 }}
           InputProps={{
             startAdornment: (
               <Box sx={{ color: 'text.secondary', mr: 1 }}>
@@ -160,7 +263,7 @@ export default function AdminProducts() {
           value={selectedCategory}
           onChange={(e) => setSelectedCategory(e.target.value)}
           size="small"
-          sx={{ minWidth: '200px' }}
+          sx={{ width: { xs: '100%', sm: 200 } }}
         >
           <MenuItem value="all">Alle Kategorien</MenuItem>
           {categories.map((category) => (
@@ -171,65 +274,85 @@ export default function AdminProducts() {
         </TextField>
       </Box>
 
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Name</TableCell>
-              <TableCell>Kategorie</TableCell>
-              <TableCell>Beschreibung</TableCell>
-              <TableCell>Bild</TableCell>
-              <TableCell align="right">Aktionen</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {filteredProducts.map((product) => (
-              <TableRow key={product._id}>
-                <TableCell>{product.name}</TableCell>
-                <TableCell>{product.category}</TableCell>
-                <TableCell>{product.description}</TableCell>
-                <TableCell>
-                  {product.imageUrl ? (
-                    <Box
-                      component="img"
-                      src={product.imageUrl}
-                      alt={product.name}
-                      sx={{
-                        width: 100,
-                        height: 100,
-                        objectFit: 'cover',
-                        borderRadius: 1,
-                        border: '1px solid',
-                        borderColor: 'divider'
-                      }}
-                    />
-                  ) : (
-                    <Typography variant="body2" color="text.secondary">
-                      Kein Bild
-                    </Typography>
-                  )}
-                </TableCell>
-                <TableCell align="right">
-                  <IconButton 
-                    size="small" 
-                    onClick={() => handleOpenDialog(product)}
-                    sx={{ mr: 1 }}
-                  >
-                    <EditIcon />
-                  </IconButton>
-                  <IconButton 
-                    size="small" 
-                    color="error"
-                    onClick={() => handleDelete(product._id)}
-                  >
-                    <DeleteIcon />
-                  </IconButton>
-                </TableCell>
+      {isMobile ? (
+        // Mobile Ansicht
+        <Box>
+          {filteredProducts.map((product) => (
+            <MobileProductCard key={product._id} product={product} />
+          ))}
+        </Box>
+      ) : (
+        // Desktop Ansicht
+        <TableContainer component={Paper}>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>Name</TableCell>
+                <TableCell>Kategorie</TableCell>
+                <TableCell>Beschreibung</TableCell>
+                <TableCell>Bild</TableCell>
+                <TableCell align="center">Buchungen</TableCell>
+                <TableCell align="right">Aktionen</TableCell>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+            </TableHead>
+            <TableBody>
+              {filteredProducts.map((product) => (
+                <TableRow key={product._id}>
+                  <TableCell>{product.name}</TableCell>
+                  <TableCell>{getCategoryLabel(product.category)}</TableCell>
+                  <TableCell>{product.description}</TableCell>
+                  <TableCell>
+                    {product.imageUrl ? (
+                      <Box
+                        component="img"
+                        src={product.imageUrl}
+                        alt={product.name}
+                        sx={{
+                          width: 100,
+                          height: 100,
+                          objectFit: 'cover',
+                          borderRadius: 1,
+                          border: '1px solid',
+                          borderColor: 'divider'
+                        }}
+                      />
+                    ) : (
+                      <Typography variant="body2" color="text.secondary">
+                        Kein Bild
+                      </Typography>
+                    )}
+                  </TableCell>
+                  <TableCell align="center">
+                    <Typography 
+                      variant="body2" 
+                      color="primary"
+                      sx={{ fontWeight: 'medium' }}
+                    >
+                      {product.bookingCount || 0}x
+                    </Typography>
+                  </TableCell>
+                  <TableCell align="right">
+                    <IconButton 
+                      size="small" 
+                      onClick={() => handleOpenDialog(product)}
+                      sx={{ mr: 1 }}
+                    >
+                      <EditIcon />
+                    </IconButton>
+                    <IconButton 
+                      size="small" 
+                      color="error"
+                      onClick={() => handleDelete(product._id)}
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      )}
 
       <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
         <DialogTitle>

@@ -1,7 +1,10 @@
 import nodemailer from 'nodemailer';
 
-// Email-Transporter konfigurieren
-const transporter = nodemailer.createTransport({
+// Prüfe, ob das E-Mail-System aktiviert ist
+const isEmailSystemEnabled = process.env.ENABLE_EMAIL_SYSTEM === 'true';
+
+// Email-Transporter konfigurieren (nur wenn E-Mail-System aktiviert ist)
+const transporter = isEmailSystemEnabled ? nodemailer.createTransport({
   host: process.env.SMTP_HOST,
   port: process.env.SMTP_PORT,
   secure: process.env.SMTP_SECURE === 'true',
@@ -12,18 +15,21 @@ const transporter = nodemailer.createTransport({
   tls: {
     ciphers: 'SSLv3',
     rejectUnauthorized: false
-  },
-  debug: true // Aktiviere Debug-Logging
-});
+  }
+}) : null;
 
 // Verifiziere die Transporter-Konfiguration beim Start
-transporter.verify(function(error, success) {
-  if (error) {
-    console.error('Fehler bei der SMTP-Konfiguration:', error);
-  } else {
-    console.log('SMTP-Server ist bereit für den E-Mail-Versand');
-  }
-});
+if (isEmailSystemEnabled && transporter) {
+  transporter.verify(function(error, success) {
+    if (error) {
+      console.error('E-Mail-System nicht verfügbar:', error.message);
+    } else {
+      console.log('E-Mail-System bereit');
+    }
+  });
+} else {
+  console.log('E-Mail-System deaktiviert - E-Mails werden simuliert');
+}
 
 // HTML-Template für die Admin-Benachrichtigung
 const createAdminNotificationHTML = (booking) => {
@@ -97,6 +103,11 @@ const createBookingConfirmationHTML = (booking) => {
 
 // Funktion zum Senden der Buchungsbestätigung
 const sendBookingConfirmation = async (booking) => {
+  if (!isEmailSystemEnabled) {
+    console.log('Simuliere E-Mail-Versand für Buchung', booking._id);
+    return;
+  }
+
   try {
     // E-Mail an den Kunden
     await transporter.sendMail({
@@ -113,11 +124,8 @@ const sendBookingConfirmation = async (booking) => {
       subject: 'Neue Buchung eingegangen - Florida Technik',
       html: createAdminNotificationHTML(booking),
     });
-
-    console.log('Buchungsbestätigung wurde gesendet an:', booking.customerEmail);
-    console.log('Admin-Benachrichtigung wurde gesendet an:', process.env.ADMIN_EMAIL);
   } catch (error) {
-    console.error('Fehler beim Senden der E-Mails:', error);
+    console.error('Fehler beim E-Mail-Versand:', error.message);
     throw error;
   }
 };

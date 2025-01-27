@@ -6,31 +6,43 @@ const API_URL = '/api';
 
 // Async Thunks
 export const createBooking = createAsyncThunk(
-  'bookings/create',
+  'bookings/createBooking',
   async (bookingData, { rejectWithValue }) => {
     try {
-      console.log('Sende Anfrage an:', `${API_URL}/bookings`);
-      console.log('Mit Daten:', bookingData);
-      const response = await axios.post(`${API_URL}/bookings`, bookingData);
-      console.log('Server Antwort:', response.data);
+      // Ensure dates are in ISO format and create a clean booking object
+      const formattedBookingData = {
+        customerName: bookingData.customerName,
+        customerEmail: bookingData.customerEmail,
+        notes: bookingData.notes || '',
+        items: bookingData.items.map(item => ({
+          productId: item.productId,
+          startDate: new Date(item.startDate).toISOString(),
+          endDate: new Date(item.endDate).toISOString()
+        }))
+      };
+
+      const response = await axios.post(`${API_URL}/bookings`, formattedBookingData);
       return response.data;
     } catch (error) {
-      console.error('Fehler beim Erstellen der Buchung:', error.response?.data || error.message);
-      return rejectWithValue(
-        error.response?.data?.message || 
-        error.response?.data || 
-        error.message || 
-        'Fehler beim Erstellen der Buchung'
-      );
+      if (error.response?.data) {
+        return rejectWithValue(error.response.data);
+      }
+      return rejectWithValue({ 
+        message: error.message || 'Ein Fehler ist aufgetreten. Bitte versuchen Sie es später erneut.' 
+      });
     }
   }
 );
 
 export const fetchBookings = createAsyncThunk(
   'bookings/fetchAll',
-  async () => {
-    const response = await axios.get(`${API_URL}/bookings`);
-    return response.data;
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await axios.get(`${API_URL}/bookings`);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || { message: error.message });
+    }
   }
 );
 
@@ -63,10 +75,10 @@ const bookingSlice = createSlice({
   initialState,
   reducers: {
     setStartDate: (state, action) => {
-      state.startDate = action.payload ? action.payload.toISOString() : null;
+      state.startDate = action.payload;
     },
     setEndDate: (state, action) => {
-      state.endDate = action.payload ? action.payload.toISOString() : null;
+      state.endDate = action.payload;
     },
     clearDates: (state) => {
       state.startDate = null;

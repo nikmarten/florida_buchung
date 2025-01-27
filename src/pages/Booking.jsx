@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Box, Grid, Container, Paper, Typography, Alert, Snackbar } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers';
 import { useDispatch, useSelector } from 'react-redux';
@@ -7,17 +7,26 @@ import EquipmentList from '../components/EquipmentList';
 
 export default function Booking() {
   const dispatch = useDispatch();
-  const { startDate, endDate } = useSelector((state) => ({
-    startDate: state.bookings.startDate ? new Date(state.bookings.startDate) : null,
-    endDate: state.bookings.endDate ? new Date(state.bookings.endDate) : null,
-  }));
+  const startDateISO = useSelector((state) => state.bookings.startDate);
+  const endDateISO = useSelector((state) => state.bookings.endDate);
+  
+  const startDate = useMemo(() => 
+    startDateISO ? new Date(startDateISO) : null, 
+    [startDateISO]
+  );
+  
+  const endDate = useMemo(() => 
+    endDateISO ? new Date(endDateISO) : null, 
+    [endDateISO]
+  );
+  
   const [error, setError] = useState('');
 
   const handleStartDateChange = (newValue) => {
     if (newValue) {
       const date = new Date(newValue);
       date.setHours(0, 0, 0, 0);
-      dispatch(setStartDate(date));
+      dispatch(setStartDate(date.toISOString()));
       
       // Wenn ein Enddatum existiert und vor dem neuen Startdatum liegt
       if (endDate && endDate < date) {
@@ -40,7 +49,7 @@ export default function Booking() {
         return;
       }
       
-      dispatch(setEndDate(date));
+      dispatch(setEndDate(date.toISOString()));
     } else {
       dispatch(setEndDate(null));
     }
@@ -54,15 +63,18 @@ export default function Booking() {
     <Box>
       <Container maxWidth="lg">
         <Grid container spacing={3}>
+          {/* Zeitauswahl */}
           <Grid item xs={12} md={3}>
             <Paper 
               elevation={0}
               sx={{ 
-                p: 3,
+                p: { xs: 2, sm: 3 },
                 borderRadius: 2,
                 backgroundColor: 'background.paper',
                 border: '1px solid',
-                borderColor: 'divider'
+                borderColor: 'divider',
+                position: { md: 'sticky' },
+                top: { md: 24 }
               }}
             >
               <Typography variant="h6" gutterBottom>
@@ -74,7 +86,10 @@ export default function Booking() {
                   value={startDate}
                   onChange={handleStartDateChange}
                   slotProps={{
-                    textField: { fullWidth: true },
+                    textField: { 
+                      fullWidth: true,
+                      size: "small"
+                    },
                   }}
                   disablePast
                   format="dd.MM.yyyy"
@@ -85,7 +100,10 @@ export default function Booking() {
                   value={endDate}
                   onChange={handleEndDateChange}
                   slotProps={{
-                    textField: { fullWidth: true },
+                    textField: { 
+                      fullWidth: true,
+                      size: "small"
+                    },
                   }}
                   minDate={startDate || undefined}
                   disablePast
@@ -95,6 +113,8 @@ export default function Booking() {
               </Box>
             </Paper>
           </Grid>
+          
+          {/* Equipment Liste */}
           <Grid item xs={12} md={9}>
             <EquipmentList />
           </Grid>

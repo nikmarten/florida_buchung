@@ -10,12 +10,14 @@ import {
   Button,
   TextField,
   Alert,
-  Snackbar
+  Snackbar,
+  TableCell
 } from '@mui/material';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { clearCart } from '../store/cartSlice';
 import { createBooking } from '../store/bookingSlice';
+import LoadingButton from '@mui/lab/LoadingButton';
 
 export default function Checkout() {
   const dispatch = useDispatch();
@@ -28,6 +30,8 @@ export default function Checkout() {
   });
   const [errors, setErrors] = useState({});
   const [showSuccess, setShowSuccess] = useState(false);
+  const [error, setError] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const formatDate = (dateString) => {
     if (!dateString) return '';
@@ -52,42 +56,58 @@ export default function Checkout() {
   const handleSubmit = async () => {
     if (!validateForm()) return;
 
+    // Ensure we have items in the cart
+    if (!cartItems || cartItems.length === 0) {
+      setErrors({ submit: 'Keine Produkte im Warenkorb' });
+      return;
+    }
+
     const bookingData = {
       customerName: formData.name,
       customerEmail: formData.email,
-      notes: formData.notes,
+      notes: formData.notes || '',
       items: cartItems.map(item => ({
-        productId: item._id,
+        productId: item.equipment._id,
         startDate: item.startDate,
         endDate: item.endDate
       }))
     };
-
-    console.log('Sende Buchungsdaten:', bookingData);
     
     try {
+      setIsSubmitting(true);
       const result = await dispatch(createBooking(bookingData)).unwrap();
-      console.log('Buchung erfolgreich:', result);
+      
       if (result && result._id) {
-        navigate(`/confirmation/${result._id}`);
-        dispatch(clearCart());
+        setShowSuccess(true);
+        setTimeout(() => {
+          dispatch(clearCart());
+          navigate(`/booking-confirmation/${result._id}`);
+        }, 1000);
       } else {
-        setErrors({ submit: 'Unerwarteter Fehler: Keine Buchungs-ID erhalten' });
+        setError('Unerwarteter Fehler: Keine Buchungs-ID erhalten');
       }
     } catch (error) {
-      console.error('Fehler bei der Buchung:', error);
-      setErrors({ 
-        submit: error.message || 'Fehler beim Speichern der Buchung. Bitte versuchen Sie es später erneut.' 
-      });
+      setError(error.message || 'Die Buchung konnte nicht abgeschlossen werden. Bitte versuchen Sie es später erneut.');
+    } finally {
+      setIsSubmitting(false);
     }
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
   };
 
   if (cartItems.length === 0) {
     return (
       <Container maxWidth="lg">
-        <Box sx={{ mt: 4, mb: 8 }}>
-          <Paper sx={{ p: 3, mt: 3 }}>
-            <Typography>Ihr Warenkorb ist leer.</Typography>
+        <Box sx={{ mt: { xs: 2, sm: 4 }, mb: { xs: 4, sm: 8 } }}>
+          <Typography variant="h4" component="h1" gutterBottom>
+            Checkout
+          </Typography>
+
+          <Paper sx={{ p: { xs: 2, sm: 3 }, mt: 3 }}>
+            <Typography>Dein Warenkorb ist leer.</Typography>
             <Button
               variant="contained"
               onClick={() => navigate('/booking')}
@@ -103,101 +123,133 @@ export default function Checkout() {
 
   return (
     <Container maxWidth="lg">
-      <Box sx={{ mt: 4, mb: 8 }}>
+      <Box sx={{ mt: { xs: 2, sm: 4 }, mb: { xs: 4, sm: 8 } }}>
         <Typography variant="h4" component="h1" gutterBottom>
-          Buchung abschließen
+          Checkout
         </Typography>
 
         <Grid container spacing={3}>
           <Grid item xs={12} md={8}>
-            <Paper sx={{ p: 3, mb: 3 }}>
+            <Paper sx={{ p: { xs: 2, sm: 3 }, mb: { xs: 2, sm: 3 } }}>
               <Typography variant="h6" gutterBottom>
-                Ausgewählte Produkte
+                Kontaktdaten
               </Typography>
-              {cartItems.map((item) => (
-                <Box
-                  key={item.id}
-                  sx={{
-                    py: 2,
-                    borderBottom: '1px solid',
-                    borderColor: 'divider',
-                    '&:last-child': { borderBottom: 0 }
-                  }}
-                >
-                  <Typography variant="subtitle1" gutterBottom>
-                    {item.name}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Zeitraum: {formatDate(item.startDate)} - {formatDate(item.endDate)}
-                  </Typography>
-                </Box>
-              ))}
-            </Paper>
-
-            <Paper sx={{ p: 3 }}>
-              <Typography variant="h6" gutterBottom>
-                Ihre Daten
-              </Typography>
-              <Grid container spacing={2}>
-                <Grid item xs={12}>
-                  <TextField
-                    fullWidth
-                    label="Name"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    error={!!errors.name}
-                    helperText={errors.name}
-                    required
-                  />
+              <form onSubmit={handleSubmit}>
+                <Grid container spacing={2}>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      required
+                      fullWidth
+                      label="Vorname"
+                      name="firstName"
+                      value={formData.firstName}
+                      onChange={handleChange}
+                      error={!!errors.firstName}
+                      helperText={errors.firstName}
+                      size="small"
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      required
+                      fullWidth
+                      label="Nachname"
+                      name="lastName"
+                      value={formData.lastName}
+                      onChange={handleChange}
+                      error={!!errors.lastName}
+                      helperText={errors.lastName}
+                      size="small"
+                    />
+                  </Grid>
+                  <Grid item xs={12}>
+                    <TextField
+                      required
+                      fullWidth
+                      label="E-Mail"
+                      name="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={handleChange}
+                      error={!!errors.email}
+                      helperText={errors.email}
+                      size="small"
+                    />
+                  </Grid>
+                  <Grid item xs={12}>
+                    <TextField
+                      required
+                      fullWidth
+                      label="Telefon"
+                      name="phone"
+                      value={formData.phone}
+                      onChange={handleChange}
+                      error={!!errors.phone}
+                      helperText={errors.phone}
+                      size="small"
+                    />
+                  </Grid>
+                  <Grid item xs={12}>
+                    <TextField
+                      fullWidth
+                      label="Anmerkungen"
+                      name="notes"
+                      multiline
+                      rows={4}
+                      value={formData.notes}
+                      onChange={handleChange}
+                      size="small"
+                    />
+                  </Grid>
                 </Grid>
-                <Grid item xs={12}>
-                  <TextField
-                    fullWidth
-                    label="E-Mail"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    error={!!errors.email}
-                    helperText={errors.email}
-                    required
-                  />
-                </Grid>
-                <Grid item xs={12}>
-                  <TextField
-                    fullWidth
-                    label="Notizen"
-                    multiline
-                    rows={4}
-                    value={formData.notes}
-                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  />
-                </Grid>
-              </Grid>
+              </form>
             </Paper>
           </Grid>
 
           <Grid item xs={12} md={4}>
-            <Paper sx={{ p: 3, position: 'sticky', top: 24 }}>
+            <Paper 
+              sx={{ 
+                p: { xs: 2, sm: 3 },
+                position: { md: 'sticky' },
+                top: 24
+              }}
+            >
               <Typography variant="h6" gutterBottom>
                 Zusammenfassung
               </Typography>
+              <Box sx={{ mb: 2 }}>
+                {cartItems.map((item) => (
+                  <Box
+                    key={item.id}
+                    sx={{
+                      py: 1,
+                      borderBottom: '1px solid',
+                      borderColor: 'divider',
+                      '&:last-child': { borderBottom: 0 }
+                    }}
+                  >
+                    <Typography variant="subtitle2">
+                      {item.equipment.name}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {formatDate(item.startDate)} - {formatDate(item.endDate)}
+                    </Typography>
+                  </Box>
+                ))}
+              </Box>
               <Typography gutterBottom>
                 Anzahl Produkte: {cartItems.length}
               </Typography>
-              {errors.submit && (
-                <Alert severity="error" sx={{ mt: 2, mb: 2 }}>
-                  {errors.submit}
-                </Alert>
-              )}
-              <Button
+              <LoadingButton
+                loading={isSubmitting}
                 variant="contained"
                 fullWidth
                 size="large"
-                sx={{ mt: 3 }}
                 onClick={handleSubmit}
+                sx={{ mt: 2 }}
               >
-                Buchung abschließen
-              </Button>
+                Jetzt buchen
+              </LoadingButton>
             </Paper>
           </Grid>
         </Grid>
@@ -206,8 +258,24 @@ export default function Checkout() {
       <Snackbar
         open={showSuccess}
         autoHideDuration={2000}
-        message="Buchung erfolgreich abgeschlossen!"
-      />
+        onClose={() => setShowSuccess(false)}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert severity="success" sx={{ width: '100%' }}>
+          Buchung erfolgreich! Du wirst weitergeleitet...
+        </Alert>
+      </Snackbar>
+
+      <Snackbar
+        open={!!error}
+        autoHideDuration={6000}
+        onClose={() => setError(null)}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert severity="error" sx={{ width: '100%' }}>
+          {error}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 } 

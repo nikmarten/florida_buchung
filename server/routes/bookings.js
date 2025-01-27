@@ -1,5 +1,6 @@
 import express from 'express';
 import Booking from '../models/Booking.js';
+import Product from '../models/Product.js';
 import { sendBookingConfirmation } from '../services/emailService.js';
 
 const router = express.Router();
@@ -9,6 +10,15 @@ router.post('/', async (req, res) => {
   const booking = new Booking(req.body);
   try {
     const savedBooking = await booking.save();
+    
+    // Erhöhe den bookingCount für jedes gebuchte Produkt
+    for (const item of booking.items) {
+      await Product.findByIdAndUpdate(
+        item.productId,
+        { $inc: { bookingCount: 1 } }
+      );
+    }
+    
     const populatedBooking = await Booking.findById(savedBooking._id).populate('items.productId');
     
     // E-Mail-Bestätigung senden
@@ -16,8 +26,18 @@ router.post('/', async (req, res) => {
       await sendBookingConfirmation(populatedBooking);
       res.status(201).json(populatedBooking);
     } catch (emailError) {
-      console.error('Fehler beim Senden der E-Mail-Bestätigung:', emailError);
-      // Lösche die Buchung wieder, da die E-Mail-Bestätigung fehlgeschlagen ist
+      // Wenn das E-Mail-System deaktiviert ist, ignoriere E-Mail-Fehler
+      if (process.env.ENABLE_EMAIL_SYSTEM !== 'true') {
+        return res.status(201).json(populatedBooking);
+      }
+      
+      // Ansonsten: Lösche die Buchung wieder und reduziere die bookingCounts
+      for (const item of booking.items) {
+        await Product.findByIdAndUpdate(
+          item.productId,
+          { $inc: { bookingCount: -1 } }
+        );
+      }
       await Booking.findByIdAndDelete(savedBooking._id);
       res.status(500).json({ 
         message: 'Die Buchung konnte nicht abgeschlossen werden. Bitte versuchen Sie es später erneut.',

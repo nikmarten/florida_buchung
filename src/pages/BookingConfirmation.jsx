@@ -77,96 +77,131 @@ export default function BookingConfirmation() {
 
   return (
     <Container maxWidth="lg">
-      <Box sx={{ mt: 4, mb: 8 }}>
-        <Paper sx={{ p: 4 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-            <CheckCircleOutlineIcon color="success" sx={{ fontSize: 40, mr: 2 }} />
-            <Typography variant="h4" component="h1">
-              Buchung erfolgreich abgeschlossen
-            </Typography>
+      <Box sx={{ mt: { xs: 2, sm: 4 }, mb: { xs: 4, sm: 8 } }}>
+        <Typography variant="h4" component="h1" gutterBottom>
+          Buchungsbestätigung
+        </Typography>
+
+        {loading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+            <CircularProgress />
           </Box>
-
-          <Alert severity="success" sx={{ mb: 4 }}>
-            Vielen Dank für Ihre Buchung! Eine Bestätigung wurde an {booking.customerEmail} gesendet.
-          </Alert>
-
-          <Typography variant="h6" gutterBottom sx={{ mt: 4 }}>
-            Buchungsdetails
-          </Typography>
-          <Grid container spacing={2} sx={{ mb: 4 }}>
-            <Grid item xs={12} sm={6}>
-              <Typography variant="subtitle2" color="text.secondary">
-                Buchungsnummer
-              </Typography>
-              <Typography variant="body1" gutterBottom>
-                {booking._id}
-              </Typography>
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <Typography variant="subtitle2" color="text.secondary">
-                Buchungsdatum
-              </Typography>
-              <Typography variant="body1" gutterBottom>
-                {formatDate(booking.createdAt)}
-              </Typography>
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <Typography variant="subtitle2" color="text.secondary">
-                Name
-              </Typography>
-              <Typography variant="body1" gutterBottom>
-                {booking.customerName}
-              </Typography>
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <Typography variant="subtitle2" color="text.secondary">
-                E-Mail
-              </Typography>
-              <Typography variant="body1" gutterBottom>
-                {booking.customerEmail}
-              </Typography>
-            </Grid>
-          </Grid>
-
-          <Divider sx={{ my: 3 }} />
-
-          <Typography variant="h6" gutterBottom>
-            Gebuchte Produkte
-          </Typography>
-          {booking.items.map((item, index) => (
-            <Paper key={index} sx={{ p: 2, mb: 2, bgcolor: 'grey.50' }}>
-              <Typography variant="subtitle1" gutterBottom>
-                {item.productId.name}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Zeitraum: {formatDate(item.startDate)} - {formatDate(item.endDate)}
-              </Typography>
-            </Paper>
-          ))}
-
-          {booking.notes && (
-            <>
-              <Typography variant="h6" gutterBottom sx={{ mt: 4 }}>
-                Anmerkungen
-              </Typography>
-              <Paper sx={{ p: 2, bgcolor: 'grey.50' }}>
-                <Typography variant="body1">
-                  {booking.notes}
-                </Typography>
-              </Paper>
-            </>
-          )}
-
-          <Box sx={{ mt: 4, display: 'flex', justifyContent: 'center' }}>
+        ) : error ? (
+          <Paper sx={{ p: { xs: 2, sm: 3 }, mt: 3 }}>
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error}
+            </Alert>
             <Button
               variant="contained"
               onClick={() => navigate('/booking')}
-              sx={{ minWidth: 200 }}
             >
-              Zurück zur Übersicht
+              Zurück zur Buchung
             </Button>
-          </Box>
-        </Paper>
+          </Paper>
+        ) : booking ? (
+          <>
+            <Paper sx={{ p: { xs: 2, sm: 3 }, mb: { xs: 2, sm: 3 } }}>
+              <Typography variant="h6" gutterBottom>
+                Buchungsdetails
+              </Typography>
+              <Grid container spacing={2}>
+                <Grid item xs={12} sm={6}>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    Buchungsnummer
+                  </Typography>
+                  <Typography gutterBottom>
+                    {booking._id}
+                  </Typography>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    Status
+                  </Typography>
+                  <Typography gutterBottom>
+                    {booking.status}
+                  </Typography>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    Name
+                  </Typography>
+                  <Typography gutterBottom>
+                    {booking.firstName} {booking.lastName}
+                  </Typography>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    E-Mail
+                  </Typography>
+                  <Typography gutterBottom>
+                    {booking.email}
+                  </Typography>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    Telefon
+                  </Typography>
+                  <Typography gutterBottom>
+                    {booking.phone}
+                  </Typography>
+                </Grid>
+                {booking.notes && (
+                  <Grid item xs={12}>
+                    <Typography variant="subtitle2" color="text.secondary">
+                      Anmerkungen
+                    </Typography>
+                    <Typography gutterBottom>
+                      {booking.notes}
+                    </Typography>
+                  </Grid>
+                )}
+              </Grid>
+            </Paper>
+
+            <Paper sx={{ p: { xs: 2, sm: 3 } }}>
+              <Typography variant="h6" gutterBottom>
+                Gebuchte Produkte
+              </Typography>
+              <Grid container spacing={2}>
+                {booking.items.map((item) => (
+                  <Grid item xs={12} key={item._id}>
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        flexDirection: { xs: 'column', sm: 'row' },
+                        gap: { xs: 2, sm: 3 },
+                        p: 2,
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        borderRadius: 1
+                      }}
+                    >
+                      <Box
+                        component="img"
+                        src={item.equipment.imageUrl || 'https://via.placeholder.com/200'}
+                        alt={item.equipment.name}
+                        sx={{
+                          width: { xs: '100%', sm: 150 },
+                          height: { xs: 200, sm: 100 },
+                          objectFit: 'cover',
+                          borderRadius: 1
+                        }}
+                      />
+                      <Box sx={{ flex: 1 }}>
+                        <Typography variant="subtitle1" gutterBottom>
+                          {item.equipment.name}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          Zeitraum: {formatDate(item.startDate)} - {formatDate(item.endDate)}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </Grid>
+                ))}
+              </Grid>
+            </Paper>
+          </>
+        ) : null}
       </Box>
     </Container>
   );
