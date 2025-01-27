@@ -145,7 +145,7 @@ export default function Navbar() {
                     horizontal: 'right',
                   }}
                 >
-                  <MenuItem onClick={() => handleNavigation('/booking')}>
+                  <MenuItem onClick={() => handleNavigation('/')}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <HomeIcon />
                       Ausrüstung buchen
@@ -178,7 +178,7 @@ export default function Navbar() {
                 <Tooltip title="Ausrüstung buchen">
                   <IconButton 
                     color="inherit"
-                    onClick={() => navigate('/booking')}
+                    onClick={() => navigate('/')}
                     size="large"
                   >
                     <HomeIcon />

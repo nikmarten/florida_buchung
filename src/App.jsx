@@ -1,27 +1,38 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Routes, Route } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import { initAuth } from './store/authSlice';
 import Layout from './components/Layout';
+import Home from './pages/Home';
 import Booking from './pages/Booking';
+import Cart from './pages/Cart';
 import Checkout from './pages/Checkout';
 import BookingConfirmation from './pages/BookingConfirmation';
 import Login from './pages/Login';
+import ProtectedRoute from './components/ProtectedRoute';
 import AdminLayout from './components/admin/AdminLayout';
 import AdminProducts from './components/admin/AdminProducts';
-import AdminCategories from './components/admin/AdminCategories';
 import AdminBookings from './components/admin/AdminBookings';
-import ProtectedRoute from './components/ProtectedRoute';
+import AdminCategories from './components/admin/AdminCategories';
 
-export default function App() {
+function App() {
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    dispatch(initAuth());
+  }, [dispatch]);
+
   return (
     <Routes>
       <Route path="/" element={<Layout />}>
-        <Route index element={<Booking />} />
+        <Route index element={<Home />} />
         <Route path="booking" element={<Booking />} />
+        <Route path="cart" element={<Cart />} />
         <Route path="checkout" element={<Checkout />} />
-        <Route path="confirmation/:bookingId" element={<BookingConfirmation />} />
+        <Route path="booking-confirmation/:bookingId" element={<BookingConfirmation />} />
         <Route path="login" element={<Login />} />
         <Route
-          path="admin"
+          path="admin/*"
           element={
             <ProtectedRoute>
               <AdminLayout />
@@ -30,10 +41,12 @@ export default function App() {
         >
           <Route index element={<AdminProducts />} />
           <Route path="products" element={<AdminProducts />} />
-          <Route path="categories" element={<AdminCategories />} />
           <Route path="bookings" element={<AdminBookings />} />
+          <Route path="categories" element={<AdminCategories />} />
         </Route>
       </Route>
     </Routes>
   );
 }
+
+export default App;

@@ -3,22 +3,31 @@ import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { login } from '../store/authSlice';
 import { Box, Paper, TextField, Button, Typography, Container, Alert } from '@mui/material';
-
-const ADMIN_PASSWORD = 'admin123'; // In einer echten Anwendung würde das Passwort natürlich sicher im Backend gespeichert
+import axios from 'axios';
 
 export default function Login() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (password === ADMIN_PASSWORD) {
-      dispatch(login());
-      navigate('/admin');
-    } else {
-      setError('Falsches Passwort');
+    try {
+      const response = await axios.post(`${import.meta.env.VITE_API_URL}/users/login`, {
+        username,
+        password
+      });
+
+      if (response.data && response.data.token) {
+        dispatch(login(response.data.token));
+        navigate('/admin');
+      } else {
+        setError('Login fehlgeschlagen');
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Netzwerkfehler beim Login');
     }
   };
 
@@ -31,6 +40,13 @@ export default function Login() {
           </Typography>
           
           <form onSubmit={handleSubmit}>
+            <TextField
+              fullWidth
+              label="Benutzername"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              margin="normal"
+            />
             <TextField
               fullWidth
               type="password"

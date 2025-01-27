@@ -13,5 +13,8 @@ export default defineConfig({
       }
     }
   },
-  envDir: './' // Explizit das Verzeichnis für Env-Dateien angeben
+  envDir: './', // Explizit das Verzeichnis für Env-Dateien angeben
+  define: {
+    'process.env.VITE_API_URL': JSON.stringify(process.env.VITE_API_URL)
+  }
 })

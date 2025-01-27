@@ -8,6 +8,7 @@ import './lib/mongodb.js';
 import productRoutes from './routes/products.js';
 import categoryRoutes from './routes/categories.js';
 import bookingRoutes from './routes/bookings.js';
+import userRoutes from './routes/users.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -22,6 +23,7 @@ app.use(cors({
   origin: [
     'http://website.livinik.de',
     'https://website.livinik.de',
+    'http://localhost:3000',
     'http://localhost:5173',
     'http://localhost:5000',
     'http://192.168.0.23:8080'
@@ -43,6 +45,7 @@ app.use((err, req, res, next) => {
 app.use('/api/products', productRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/bookings', bookingRoutes);
+app.use('/api/users', userRoutes);
 
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
