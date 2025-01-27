@@ -7,9 +7,22 @@ const API_URL = '/api';
 // Async Thunks
 export const createBooking = createAsyncThunk(
   'bookings/create',
-  async (bookingData) => {
-    const response = await axios.post(`${API_URL}/bookings`, bookingData);
-    return response.data;
+  async (bookingData, { rejectWithValue }) => {
+    try {
+      console.log('Sende Anfrage an:', `${API_URL}/bookings`);
+      console.log('Mit Daten:', bookingData);
+      const response = await axios.post(`${API_URL}/bookings`, bookingData);
+      console.log('Server Antwort:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Fehler beim Erstellen der Buchung:', error.response?.data || error.message);
+      return rejectWithValue(
+        error.response?.data?.message || 
+        error.response?.data || 
+        error.message || 
+        'Fehler beim Erstellen der Buchung'
+      );
+    }
   }
 );
 

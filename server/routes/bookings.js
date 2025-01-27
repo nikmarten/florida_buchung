@@ -14,12 +14,16 @@ router.post('/', async (req, res) => {
     // E-Mail-Bestätigung senden
     try {
       await sendBookingConfirmation(populatedBooking);
+      res.status(201).json(populatedBooking);
     } catch (emailError) {
       console.error('Fehler beim Senden der E-Mail-Bestätigung:', emailError);
-      // Wir werfen hier keinen Fehler, da die Buchung trotzdem erfolgreich war
+      // Lösche die Buchung wieder, da die E-Mail-Bestätigung fehlgeschlagen ist
+      await Booking.findByIdAndDelete(savedBooking._id);
+      res.status(500).json({ 
+        message: 'Die Buchung konnte nicht abgeschlossen werden. Bitte versuchen Sie es später erneut.',
+        error: emailError.message 
+      });
     }
-
-    res.status(201).json(populatedBooking);
   } catch (error) {
     res.status(400).json({ message: error.message });
   }

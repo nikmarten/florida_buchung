@@ -63,12 +63,22 @@ export default function Checkout() {
       }))
     };
 
+    console.log('Sende Buchungsdaten:', bookingData);
+    
     try {
       const result = await dispatch(createBooking(bookingData)).unwrap();
-      navigate(`/confirmation/${result._id}`);
-      dispatch(clearCart());
+      console.log('Buchung erfolgreich:', result);
+      if (result && result._id) {
+        navigate(`/confirmation/${result._id}`);
+        dispatch(clearCart());
+      } else {
+        setErrors({ submit: 'Unerwarteter Fehler: Keine Buchungs-ID erhalten' });
+      }
     } catch (error) {
-      setErrors({ submit: 'Fehler beim Speichern der Buchung. Bitte versuchen Sie es später erneut.' });
+      console.error('Fehler bei der Buchung:', error);
+      setErrors({ 
+        submit: error.message || 'Fehler beim Speichern der Buchung. Bitte versuchen Sie es später erneut.' 
+      });
     }
   };
 

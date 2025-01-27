@@ -9,6 +9,20 @@ const transporter = nodemailer.createTransport({
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
   },
+  tls: {
+    ciphers: 'SSLv3',
+    rejectUnauthorized: false
+  },
+  debug: true // Aktiviere Debug-Logging
+});
+
+// Verifiziere die Transporter-Konfiguration beim Start
+transporter.verify(function(error, success) {
+  if (error) {
+    console.error('Fehler bei der SMTP-Konfiguration:', error);
+  } else {
+    console.log('SMTP-Server ist bereit für den E-Mail-Versand');
+  }
 });
 
 // HTML-Template für die Admin-Benachrichtigung
