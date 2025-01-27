@@ -1,7 +1,8 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL;
+// Nutze den in vite.config.js konfigurierten Proxy
+const API_URL = '/api';
 
 // Async Thunks
 export const createBooking = createAsyncThunk(
