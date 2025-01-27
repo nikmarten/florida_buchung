@@ -73,7 +73,7 @@ router.delete('/:id', async (req, res) => {
     if (!booking) {
       return res.status(404).json({ message: 'Buchung nicht gefunden' });
     }
-    await booking.remove();
+    await booking.deleteOne();
     res.json({ message: 'Buchung erfolgreich gelöscht' });
   } catch (error) {
     res.status(500).json({ message: error.message });
