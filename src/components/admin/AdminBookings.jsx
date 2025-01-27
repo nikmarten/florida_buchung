@@ -116,15 +116,27 @@ const AdminBookings = () => {
   };
 
   return (
-    <Box sx={{ p: 3 }}>
+    <Box sx={{ p: { xs: 1, sm: 3 } }}>
       {/* Header mit Navigation */}
-      <Box sx={{ display: 'flex', alignItems: 'center', mb: 3, gap: 2 }}>
+      <Box sx={{ 
+        display: 'flex', 
+        flexDirection: { xs: 'column', sm: 'row' },
+        alignItems: 'center', 
+        mb: 3, 
+        gap: 2 
+      }}>
         <Typography variant="h5">Buchungskalender</Typography>
-        <Box sx={{ display: 'flex', alignItems: 'center', ml: 'auto' }}>
+        <Box sx={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          ml: { xs: 0, sm: 'auto' },
+          width: { xs: '100%', sm: 'auto' },
+          justifyContent: { xs: 'space-between', sm: 'flex-start' }
+        }}>
           <IconButton onClick={handlePreviousWeek} size="large">
             <ChevronLeft />
           </IconButton>
-          <Typography sx={{ mx: 2 }}>
+          <Typography sx={{ mx: 2 }} variant="body2">
             {format(startDate, 'dd.MM.', { locale: de })} - {format(weekDays[6], 'dd.MM.yyyy', { locale: de })}
           </Typography>
           <IconButton onClick={handleNextWeek} size="large">
@@ -133,84 +145,159 @@ const AdminBookings = () => {
         </Box>
       </Box>
       
-      <Grid container spacing={1}>
-        <Grid container item spacing={1}>
-          {/* Wochentage Header */}
-          {weekDays.map((day) => (
-            <Grid item xs key={day.toISOString()}>
-              <Paper 
-                elevation={2}
-                sx={{ 
-                  p: 1,
-                  bgcolor: 'primary.main',
-                  color: 'white',
-                  textAlign: 'center',
-                  borderRadius: '4px 4px 0 0'
-                }}
-              >
-                <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
-                  {format(day, 'EEEE', { locale: de })}
-                </Typography>
-                <Typography variant="caption">
-                  {format(day, 'dd.MM.', { locale: de })}
-                </Typography>
-              </Paper>
-            </Grid>
-          ))}
-        </Grid>
-
-        <Grid container item spacing={1}>
-          {/* Buchungen für jeden Tag */}
-          {weekDays.map((day) => (
-            <Grid item xs key={`bookings-${day.toISOString()}`}>
-              <Paper 
-                elevation={1}
-                sx={{ 
-                  p: 1,
-                  minHeight: 200,
-                  bgcolor: 'background.default',
-                  borderRadius: '0 0 4px 4px',
-                  overflowY: 'auto'
-                }}
-              >
-                {getBookingsForDay(day).map((booking) => (
-                  <Tooltip 
-                    key={booking._id}
-                    title="Klicken für Details"
+      {/* Mobile Ansicht */}
+      <Box sx={{ display: { xs: 'block', md: 'none' } }}>
+        {weekDays.map((day) => (
+          <Box key={day.toISOString()} sx={{ mb: 2 }}>
+            <Paper 
+              elevation={2}
+              sx={{ 
+                p: 1,
+                bgcolor: 'primary.main',
+                color: 'white',
+                textAlign: 'center',
+                borderRadius: '4px 4px 0 0'
+              }}
+            >
+              <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
+                {format(day, 'EEEE', { locale: de })}
+              </Typography>
+              <Typography variant="caption">
+                {format(day, 'dd.MM.', { locale: de })}
+              </Typography>
+            </Paper>
+            <Paper 
+              elevation={1}
+              sx={{ 
+                p: 1,
+                minHeight: 100,
+                bgcolor: 'background.default',
+                borderRadius: '0 0 4px 4px'
+              }}
+            >
+              {getBookingsForDay(day).map((booking) => (
+                <Tooltip 
+                  key={booking._id}
+                  title="Klicken für Details"
+                >
+                  <Paper
+                    elevation={2}
+                    onClick={() => handleOpenDialog(booking)}
+                    sx={{
+                      p: 1,
+                      mb: 1,
+                      bgcolor: bookingColors[booking._id],
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      '&:hover': {
+                        filter: 'brightness(0.9)',
+                        transform: 'translateY(-2px)'
+                      }
+                    }}
                   >
-                    <Paper
-                      elevation={2}
-                      onClick={() => handleOpenDialog(booking)}
-                      sx={{
-                        p: 1,
-                        mb: 1,
-                        bgcolor: bookingColors[booking._id],
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        '&:hover': {
-                          filter: 'brightness(0.9)',
-                          transform: 'translateY(-2px)'
-                        }
-                      }}
+                    <Typography 
+                      variant="body2" 
+                      sx={{ 
+                        fontWeight: 'bold',
+                        color: 'rgba(0, 0, 0, 0.7)'
+                      }} 
                     >
-                      <Typography 
-                        variant="body2" 
-                        sx={{ 
-                          fontWeight: 'bold',
-                          color: 'rgba(0, 0, 0, 0.7)'
-                        }} 
-                        align="center"
-                      >
-                        {booking.customerName}
+                      {booking.customerName}
+                    </Typography>
+                    {booking.items.map((item, index) => (
+                      <Typography key={index} variant="caption" display="block" sx={{ color: 'rgba(0, 0, 0, 0.6)' }}>
+                        {item.productId?.name || 'Unbekanntes Produkt'}
                       </Typography>
-                    </Paper>
-                  </Tooltip>
-                ))}
-              </Paper>
-            </Grid>
-          ))}
+                    ))}
+                  </Paper>
+                </Tooltip>
+              ))}
+            </Paper>
+          </Box>
+        ))}
+      </Box>
+
+      {/* Desktop Ansicht */}
+      <Box sx={{ display: { xs: 'none', md: 'block' } }}>
+        <Grid container spacing={1}>
+          <Grid container item spacing={1}>
+            {/* Wochentage Header */}
+            {weekDays.map((day) => (
+              <Grid item xs key={day.toISOString()}>
+                <Paper 
+                  elevation={2}
+                  sx={{ 
+                    p: 1,
+                    bgcolor: 'primary.main',
+                    color: 'white',
+                    textAlign: 'center',
+                    borderRadius: '4px 4px 0 0'
+                  }}
+                >
+                  <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
+                    {format(day, 'EEEE', { locale: de })}
+                  </Typography>
+                  <Typography variant="caption">
+                    {format(day, 'dd.MM.', { locale: de })}
+                  </Typography>
+                </Paper>
+              </Grid>
+            ))}
+          </Grid>
+
+          <Grid container item spacing={1}>
+            {/* Buchungen für jeden Tag */}
+            {weekDays.map((day) => (
+              <Grid item xs key={`bookings-${day.toISOString()}`}>
+                <Paper 
+                  elevation={1}
+                  sx={{ 
+                    p: 1,
+                    minHeight: 200,
+                    bgcolor: 'background.default',
+                    borderRadius: '0 0 4px 4px',
+                    overflowY: 'auto'
+                  }}
+                >
+                  {getBookingsForDay(day).map((booking) => (
+                    <Tooltip 
+                      key={booking._id}
+                      title="Klicken für Details"
+                    >
+                      <Paper
+                        elevation={2}
+                        onClick={() => handleOpenDialog(booking)}
+                        sx={{
+                          p: 1,
+                          mb: 1,
+                          bgcolor: bookingColors[booking._id],
+                          cursor: 'pointer',
+                          transition: 'all 0.2s',
+                          '&:hover': {
+                            filter: 'brightness(0.9)',
+                            transform: 'translateY(-2px)'
+                          }
+                        }}
+                      >
+                        <Typography 
+                          variant="body2" 
+                          sx={{ 
+                            fontWeight: 'bold',
+                            color: 'rgba(0, 0, 0, 0.7)'
+                          }} 
+                          align="center"
+                        >
+                          {booking.customerName}
+                        </Typography>
+                      </Paper>
+                    </Tooltip>
+                  ))}
+                </Paper>
+              </Grid>
+            ))}
+          </Grid>
         </Grid>
-      </Grid>
+      </Box>
 
       {/* Buchungsdetails Dialog */}
       <Dialog 
@@ -248,43 +335,34 @@ const AdminBookings = () => {
                   <strong>Email:</strong> {selectedBooking.customerEmail}
                 </Typography>
                 {selectedBooking.notes && (
-                  <Typography variant="body1" sx={{ mb: 2 }}>
-                    <strong>Notizen:</strong> {selectedBooking.notes}
-                  </Typography>
+                  <>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>
+                      Anmerkungen
+                    </Typography>
+                    <Typography variant="body1" sx={{ mb: 2 }}>
+                      {selectedBooking.notes}
+                    </Typography>
+                  </>
                 )}
-
                 <Divider sx={{ my: 2 }} />
-
                 <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 2 }}>
-                  Gebuchte Produkte
+                  Gebuchte Artikel
                 </Typography>
                 {selectedBooking.items.map((item, index) => (
                   <Box key={index} sx={{ mb: 2 }}>
-                    <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
-                      {item.productId?.name || 'Unbekanntes Produkt'}
+                    <Typography variant="body1">
+                      <strong>Artikel:</strong> {item.productId?.name || 'Unbekanntes Produkt'}
                     </Typography>
-                    <Typography variant="body2">
-                      Zeitraum: {format(parseISO(item.startDate), 'dd.MM.yyyy')} - {format(parseISO(item.endDate), 'dd.MM.yyyy')}
+                    <Typography variant="body1">
+                      <strong>Zeitraum:</strong> {format(parseISO(item.startDate), 'dd.MM.yyyy')} - {format(parseISO(item.endDate), 'dd.MM.yyyy')}
                     </Typography>
                   </Box>
                 ))}
-
-                <Divider sx={{ my: 2 }} />
-
-                <Typography variant="body2" color="text.secondary">
-                  Buchung erstellt am: {format(parseISO(selectedBooking.createdAt), 'dd.MM.yyyy HH:mm')}
-                </Typography>
               </Box>
             </DialogContent>
             <DialogActions>
-              <Button onClick={handleCloseDialog} variant="contained">
-                Schließen
-              </Button>
-              <Button 
-                onClick={handleDeleteBooking}
-                color="error"
-                variant="contained"
-              >
+              <Button onClick={handleCloseDialog}>Schließen</Button>
+              <Button onClick={handleDeleteBooking} color="error">
                 Buchung löschen
               </Button>
             </DialogActions>

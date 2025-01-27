@@ -2,53 +2,54 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 
 // Nutze den in vite.config.js konfigurierten Proxy
-const API_URL = '/api';
+const API_URL = import.meta.env.VITE_API_URL;
+
+// Helper-Funktion für den Auth-Header
+const getAuthHeader = () => {
+  const token = localStorage.getItem('token');
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
 
 export const fetchCategories = createAsyncThunk(
   'categories/fetchCategories',
-  async (_, { rejectWithValue }) => {
-    try {
-      const response = await axios.get(`${API_URL}/categories`);
-      return response.data;
-    } catch (error) {
-      return rejectWithValue(error.response?.data?.message || error.message);
-    }
+  async () => {
+    const response = await axios.get(`${API_URL}/categories`);
+    return response.data;
   }
 );
 
 export const addCategory = createAsyncThunk(
   'categories/addCategory',
-  async (categoryData, { rejectWithValue }) => {
-    try {
-      const response = await axios.post(`${API_URL}/categories`, categoryData);
-      return response.data;
-    } catch (error) {
-      return rejectWithValue(error.response?.data?.message || error.message);
-    }
+  async (category) => {
+    const response = await axios.post(`${API_URL}/categories`, category, {
+      headers: getAuthHeader()
+    });
+    return response.data;
   }
 );
 
 export const updateCategory = createAsyncThunk(
   'categories/updateCategory',
-  async ({ id, data }, { rejectWithValue }) => {
-    try {
-      const response = await axios.put(`${API_URL}/categories/${id}`, data);
-      return response.data;
-    } catch (error) {
-      return rejectWithValue(error.response?.data?.message || error.message);
-    }
+  async (category) => {
+    const response = await axios.put(`${API_URL}/categories/${category._id}`, {
+      label: category.label,
+      value: category.value,
+      order: category.order,
+      description: category.description
+    }, {
+      headers: getAuthHeader()
+    });
+    return response.data;
   }
 );
 
 export const deleteCategory = createAsyncThunk(
   'categories/deleteCategory',
-  async (id, { rejectWithValue }) => {
-    try {
-      await axios.delete(`${API_URL}/categories/${id}`);
-      return id;
-    } catch (error) {
-      return rejectWithValue(error.response?.data?.message || error.message);
-    }
+  async (id) => {
+    await axios.delete(`${API_URL}/categories/${id}`, {
+      headers: getAuthHeader()
+    });
+    return id;
   }
 );
 
@@ -81,7 +82,7 @@ const categorySlice = createSlice({
       })
       .addCase(fetchCategories.rejected, (state, action) => {
         state.status = 'failed';
-        state.error = action.payload;
+        state.error = action.error.message;
       })
       // Add Category
       .addCase(addCategory.pending, (state) => {
@@ -95,7 +96,7 @@ const categorySlice = createSlice({
       })
       .addCase(addCategory.rejected, (state, action) => {
         state.status = 'failed';
-        state.error = action.payload;
+        state.error = action.error.message;
       })
       // Update Category
       .addCase(updateCategory.fulfilled, (state, action) => {

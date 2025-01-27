@@ -17,7 +17,13 @@ import {
   Typography,
   Paper
 } from '@mui/material';
-import { Edit as EditIcon, Delete as DeleteIcon, Add as AddIcon } from '@mui/icons-material';
+import { 
+  Edit as EditIcon, 
+  Delete as DeleteIcon, 
+  Add as AddIcon,
+  ArrowUpward as ArrowUpIcon,
+  ArrowDownward as ArrowDownIcon 
+} from '@mui/icons-material';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchCategories, addCategory, updateCategory, deleteCategory } from '../../store/categorySlice';
 
@@ -28,7 +34,8 @@ export default function AdminCategories() {
   const [openDialog, setOpenDialog] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
   const [formData, setFormData] = useState({
-    label: ''
+    label: '',
+    order: 0
   });
 
   useEffect(() => {
@@ -39,10 +46,16 @@ export default function AdminCategories() {
 
   const handleOpenDialog = (category = null) => {
     if (category) {
-      setFormData({ label: category.label });
+      setFormData({ 
+        label: category.label,
+        order: category.order || 0
+      });
       setEditingCategory(category);
     } else {
-      setFormData({ label: '' });
+      setFormData({ 
+        label: '',
+        order: categories.length 
+      });
       setEditingCategory(null);
     }
     setOpenDialog(true);
@@ -54,7 +67,7 @@ export default function AdminCategories() {
   };
 
   const handleInputChange = (e) => {
-    setFormData({ label: e.target.value });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const generateValue = (label) => {
@@ -69,18 +82,20 @@ export default function AdminCategories() {
     try {
       const categoryData = {
         label: formData.label,
-        value: generateValue(formData.label)
+        value: generateValue(formData.label),
+        order: formData.order
       };
 
       if (editingCategory) {
         await dispatch(updateCategory({ 
-          id: editingCategory._id, 
-          data: categoryData 
+          ...editingCategory,
+          ...categoryData
         })).unwrap();
       } else {
         await dispatch(addCategory(categoryData)).unwrap();
       }
       handleCloseDialog();
+      dispatch(fetchCategories());
     } catch (err) {
       console.error('Error saving category:', err);
       alert('Fehler beim Speichern: ' + (err.message || 'Unbekannter Fehler'));
@@ -91,8 +106,45 @@ export default function AdminCategories() {
     if (window.confirm('Möchten Sie diese Kategorie wirklich löschen?')) {
       try {
         await dispatch(deleteCategory(categoryId)).unwrap();
+        dispatch(fetchCategories());
       } catch (err) {
         alert('Fehler beim Löschen: ' + err.message);
+      }
+    }
+  };
+
+  const handleMove = async (category, direction) => {
+    const sortedCategories = [...categories].sort((a, b) => a.order - b.order);
+    const currentIndex = sortedCategories.findIndex(c => c._id === category._id);
+    const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+    
+    if (newIndex >= 0 && newIndex < sortedCategories.length) {
+      const otherCategory = sortedCategories[newIndex];
+      
+      try {
+        // Zuerst die andere Kategorie aktualisieren
+        await dispatch(updateCategory({
+          _id: otherCategory._id,
+          label: otherCategory.label,
+          value: otherCategory.value,
+          description: otherCategory.description || '',
+          order: currentIndex // Tausche die Positionen
+        })).unwrap();
+        
+        // Dann die aktuelle Kategorie aktualisieren
+        await dispatch(updateCategory({
+          _id: category._id,
+          label: category.label,
+          value: category.value,
+          description: category.description || '',
+          order: newIndex // Tausche die Positionen
+        })).unwrap();
+        
+        // Kategorien neu laden
+        await dispatch(fetchCategories());
+      } catch (err) {
+        console.error('Error moving category:', err);
+        alert('Fehler beim Verschieben: ' + (err.message || 'Unbekannter Fehler'));
       }
     }
   };
@@ -104,6 +156,8 @@ export default function AdminCategories() {
   if (status === 'failed') {
     return <Box sx={{ p: 2 }}><Typography color="error">{error}</Typography></Box>;
   }
+
+  const sortedCategories = [...categories].sort((a, b) => a.order - b.order);
 
   return (
     <Box sx={{ p: 2 }}>
@@ -122,14 +176,34 @@ export default function AdminCategories() {
         <Table>
           <TableHead>
             <TableRow>
+              <TableCell>Position</TableCell>
               <TableCell>Bezeichnung</TableCell>
               <TableCell>Wert</TableCell>
               <TableCell align="right">Aktionen</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {categories.map((category) => (
+            {sortedCategories.map((category, index) => (
               <TableRow key={category._id}>
+                <TableCell>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <IconButton 
+                      size="small"
+                      onClick={() => handleMove(category, 'up')}
+                      disabled={index === 0}
+                    >
+                      <ArrowUpIcon />
+                    </IconButton>
+                    <IconButton 
+                      size="small"
+                      onClick={() => handleMove(category, 'down')}
+                      disabled={index === categories.length - 1}
+                    >
+                      <ArrowDownIcon />
+                    </IconButton>
+                    {index + 1}
+                  </Box>
+                </TableCell>
                 <TableCell>{category.label}</TableCell>
                 <TableCell>{category.value}</TableCell>
                 <TableCell align="right">
@@ -168,6 +242,7 @@ export default function AdminCategories() {
               value={formData.label}
               onChange={handleInputChange}
               helperText="z.B. 'Kameras' oder 'Audio Equipment'"
+              sx={{ mb: 2 }}
             />
           </Box>
         </DialogContent>
