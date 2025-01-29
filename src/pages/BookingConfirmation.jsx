@@ -10,9 +10,18 @@ import {
   Button,
   Divider,
   Alert,
-  CircularProgress
+  CircularProgress,
+  Card,
+  CardContent
 } from '@mui/material';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import {
+  CheckCircleOutline as CheckCircleIcon,
+  EventNote as EventIcon,
+  Email as EmailIcon,
+  Person as PersonIcon,
+  Phone as PhoneIcon,
+  Notes as NotesIcon
+} from '@mui/icons-material';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 
@@ -52,7 +61,12 @@ export default function BookingConfirmation() {
   if (loading) {
     return (
       <Container maxWidth="lg">
-        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+        <Box sx={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center', 
+          minHeight: '50vh' 
+        }}>
           <CircularProgress />
         </Box>
       </Container>
@@ -78,130 +92,153 @@ export default function BookingConfirmation() {
   return (
     <Container maxWidth="lg">
       <Box sx={{ mt: { xs: 2, sm: 4 }, mb: { xs: 4, sm: 8 } }}>
-        <Typography variant="h4" component="h1" gutterBottom>
-          Buchungsbestätigung
-        </Typography>
+        <Box sx={{ 
+          display: 'flex', 
+          flexDirection: 'column', 
+          alignItems: 'center',
+          textAlign: 'center',
+          mb: 4 
+        }}>
+          <CheckCircleIcon 
+            color="success" 
+            sx={{ fontSize: 64, mb: 2 }} 
+          />
+          <Typography variant="h4" component="h1" gutterBottom>
+            Buchung erfolgreich!
+          </Typography>
+          <Typography variant="subtitle1" color="text.secondary">
+            Vielen Dank für deine Buchung. Hier sind deine Buchungsdetails:
+          </Typography>
+        </Box>
 
-        {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-            <CircularProgress />
-          </Box>
-        ) : error ? (
-          <Paper sx={{ p: { xs: 2, sm: 3 }, mt: 3 }}>
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {error}
-            </Alert>
-            <Button
-              variant="contained"
-              onClick={() => navigate('/booking')}
-            >
-              Zurück zur Buchung
-            </Button>
-          </Paper>
-        ) : booking ? (
-          <>
-            <Paper sx={{ p: { xs: 2, sm: 3 }, mb: { xs: 2, sm: 3 } }}>
-              <Typography variant="h6" gutterBottom>
-                Buchungsdetails
-              </Typography>
-              <Grid container spacing={2}>
-                <Grid item xs={12} sm={6}>
-                  <Typography variant="subtitle2" color="text.secondary">
-                    Buchungsnummer
+        <Grid container spacing={3}>
+          <Grid item xs={12} md={6}>
+            <Card elevation={0} sx={{ height: '100%', border: 1, borderColor: 'divider' }}>
+              <CardContent>
+                <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <PersonIcon /> Persönliche Daten
+                </Typography>
+                <Box sx={{ ml: 4 }}>
+                  <Typography variant="body1" gutterBottom>
+                    {booking.customerName}
                   </Typography>
-                  <Typography gutterBottom>
-                    {booking._id}
+                  <Typography variant="body1" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <EmailIcon fontSize="small" /> {booking.customerEmail}
                   </Typography>
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <Typography variant="subtitle2" color="text.secondary">
-                    Status
-                  </Typography>
-                  <Typography gutterBottom>
-                    {booking.status}
-                  </Typography>
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <Typography variant="subtitle2" color="text.secondary">
-                    Name
-                  </Typography>
-                  <Typography gutterBottom>
-                    {booking.firstName} {booking.lastName}
-                  </Typography>
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <Typography variant="subtitle2" color="text.secondary">
-                    E-Mail
-                  </Typography>
-                  <Typography gutterBottom>
-                    {booking.email}
-                  </Typography>
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <Typography variant="subtitle2" color="text.secondary">
-                    Telefon
-                  </Typography>
-                  <Typography gutterBottom>
-                    {booking.phone}
-                  </Typography>
-                </Grid>
-                {booking.notes && (
-                  <Grid item xs={12}>
-                    <Typography variant="subtitle2" color="text.secondary">
-                      Anmerkungen
+                  {booking.phone && (
+                    <Typography variant="body1" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <PhoneIcon fontSize="small" /> {booking.phone}
                     </Typography>
-                    <Typography gutterBottom>
+                  )}
+                </Box>
+
+                {booking.notes && (
+                  <>
+                    <Typography variant="h6" gutterBottom sx={{ mt: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <NotesIcon /> Anmerkungen
+                    </Typography>
+                    <Typography variant="body1" sx={{ ml: 4 }}>
                       {booking.notes}
                     </Typography>
-                  </Grid>
+                  </>
                 )}
-              </Grid>
-            </Paper>
+              </CardContent>
+            </Card>
+          </Grid>
 
-            <Paper sx={{ p: { xs: 2, sm: 3 } }}>
-              <Typography variant="h6" gutterBottom>
-                Gebuchte Produkte
-              </Typography>
-              <Grid container spacing={2}>
-                {booking.items.map((item) => (
-                  <Grid item xs={12} key={item._id}>
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        flexDirection: { xs: 'column', sm: 'row' },
-                        gap: { xs: 2, sm: 3 },
-                        p: 2,
-                        border: '1px solid',
-                        borderColor: 'divider',
-                        borderRadius: 1
-                      }}
-                    >
-                      <Box
-                        component="img"
-                        src={item.equipment.imageUrl || 'https://via.placeholder.com/200'}
-                        alt={item.equipment.name}
-                        sx={{
-                          width: { xs: '100%', sm: 150 },
-                          height: { xs: 200, sm: 100 },
-                          objectFit: 'cover',
-                          borderRadius: 1
+          <Grid item xs={12} md={6}>
+            <Card elevation={0} sx={{ height: '100%', border: 1, borderColor: 'divider' }}>
+              <CardContent>
+                <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <EventIcon /> Buchungsdetails
+                </Typography>
+                <Box sx={{ ml: 4 }}>
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                    Buchungsnummer
+                  </Typography>
+                  <Typography variant="body1" gutterBottom sx={{ mb: 2 }}>
+                    {booking._id}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                    Status
+                  </Typography>
+                  <Typography 
+                    variant="body1" 
+                    sx={{ 
+                      color: booking.status === 'confirmed' ? 'success.main' : 'text.primary',
+                      mb: 2
+                    }}
+                  >
+                    {booking.status === 'confirmed' ? 'Bestätigt' : 'In Bearbeitung'}
+                  </Typography>
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          <Grid item xs={12}>
+            <Card elevation={0} sx={{ border: 1, borderColor: 'divider' }}>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>
+                  Gebuchte Produkte
+                </Typography>
+                <Grid container spacing={2}>
+                  {booking.items.map((item) => (
+                    <Grid item xs={12} key={item._id}>
+                      <Paper 
+                        elevation={0}
+                        sx={{ 
+                          p: 2, 
+                          border: 1, 
+                          borderColor: 'divider',
+                          '&:hover': {
+                            bgcolor: 'action.hover'
+                          }
                         }}
-                      />
-                      <Box sx={{ flex: 1 }}>
-                        <Typography variant="subtitle1" gutterBottom>
-                          {item.equipment.name}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          Zeitraum: {formatDate(item.startDate)} - {formatDate(item.endDate)}
-                        </Typography>
-                      </Box>
-                    </Box>
-                  </Grid>
-                ))}
-              </Grid>
-            </Paper>
-          </>
-        ) : null}
+                      >
+                        <Box sx={{ 
+                          display: 'flex', 
+                          flexDirection: { xs: 'column', sm: 'row' },
+                          gap: 2
+                        }}>
+                          <Box
+                            component="img"
+                            src={item.productId?.imageUrl || 'https://via.placeholder.com/200'}
+                            alt={item.productId?.name || 'Produkt'}
+                            sx={{
+                              width: { xs: '100%', sm: 150 },
+                              height: { xs: 200, sm: 100 },
+                              objectFit: 'cover',
+                              borderRadius: 1
+                            }}
+                          />
+                          <Box sx={{ flex: 1 }}>
+                            <Typography variant="h6">
+                              {item.productId?.name || 'Unbekanntes Produkt'}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                              Zeitraum: {formatDate(item.startDate)} - {formatDate(item.endDate)}
+                            </Typography>
+                          </Box>
+                        </Box>
+                      </Paper>
+                    </Grid>
+                  ))}
+                </Grid>
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
+
+        <Box sx={{ mt: 4, textAlign: 'center' }}>
+          <Button
+            variant="contained"
+            onClick={() => navigate('/booking')}
+            sx={{ minWidth: 200 }}
+          >
+            Neue Buchung erstellen
+          </Button>
+        </Box>
       </Box>
     </Container>
   );
