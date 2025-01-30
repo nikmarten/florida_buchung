@@ -1,408 +1,365 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
 import {
   Box,
   Button,
-  Table,
-  TableBody,
-  TableCell,
   TableContainer,
+  Table,
   TableHead,
+  TableBody,
   TableRow,
+  TableCell,
+  Paper,
   IconButton,
+  Typography,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
   TextField,
+  FormControl,
+  InputLabel,
+  Select,
   MenuItem,
-  Typography,
-  Paper,
-  CircularProgress,
-  useMediaQuery,
-  useTheme
+  FormHelperText
 } from '@mui/material';
-import { Edit as EditIcon, Delete as DeleteIcon, Add as AddIcon, Search as SearchIcon } from '@mui/icons-material';
-import { useDispatch, useSelector } from 'react-redux';
-import { fetchProducts, addProduct, updateProduct, deleteProduct } from '../../store/productSlice';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
+import AddIcon from '@mui/icons-material/Add';
+import { fetchProducts, addProduct as createProduct, updateProduct, deleteProduct } from '../../store/productSlice';
 import { fetchCategories } from '../../store/categorySlice';
 
 export default function AdminProducts() {
   const dispatch = useDispatch();
-  const { items: products, status, error } = useSelector((state) => state.products);
-  const { items: categories, status: categoryStatus } = useSelector((state) => state.categories);
-  
-  const [openDialog, setOpenDialog] = useState(false);
-  const [editingProduct, setEditingProduct] = useState(null);
+  const products = useSelector((state) => state.products.items);
+  const status = useSelector((state) => state.products.status);
+  const error = useSelector((state) => state.products.error);
+  const categories = useSelector((state) => state.categories.items);
+  const [open, setOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('all');
   const [formData, setFormData] = useState({
     name: '',
-    category: '',
     description: '',
-    imageUrl: ''
+    category: '',
+    quantity: 0,
+    imageUrl: '',
+    lockPeriodDays: 0
   });
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('all');
-
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-
-  // Filter products based on search query and selected category
-  const filteredProducts = useMemo(() => {
-    return products.filter(product => {
-      const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          product.description.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesCategory = selectedCategory === 'all' || product.category === selectedCategory;
-      return matchesSearch && matchesCategory;
-    });
-  }, [products, searchQuery, selectedCategory]);
 
   useEffect(() => {
-    if (status === 'idle') {
-      dispatch(fetchProducts());
-    }
-    if (categoryStatus === 'idle') {
-      dispatch(fetchCategories());
-    }
-  }, [status, categoryStatus, dispatch]);
+    dispatch(fetchProducts());
+    dispatch(fetchCategories());
+  }, [dispatch]);
 
-  const handleOpenDialog = (product = null) => {
+  // Filterfunktion für Produkte
+  const filteredProducts = products.filter(product => {
+    const matchesSearch = 
+      product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.description.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesCategory = 
+      selectedCategory === 'all' || 
+      product.category?._id === selectedCategory;
+
+    return matchesSearch && matchesCategory;
+  });
+
+  const handleOpen = (product = null) => {
     if (product) {
-      setFormData({ ...product });
-      setEditingProduct(product);
+      setSelectedProduct(product);
+      setFormData({
+        name: product.name,
+        description: product.description,
+        category: product.category?._id || '',
+        quantity: product.quantity || 0,
+        imageUrl: product.imageUrl || '',
+        lockPeriodDays: product.lockPeriodDays || 0
+      });
     } else {
+      setSelectedProduct(null);
       setFormData({
         name: '',
-        category: categories.length > 0 ? categories[0].value : '',
         description: '',
-        imageUrl: ''
+        category: '',
+        quantity: 0,
+        imageUrl: '',
+        lockPeriodDays: 0
       });
-      setEditingProduct(null);
     }
-    setOpenDialog(true);
+    setOpen(true);
   };
 
-  const handleCloseDialog = () => {
-    setOpenDialog(false);
-    setEditingProduct(null);
-  };
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+  const handleClose = () => {
+    setOpen(false);
+    setSelectedProduct(null);
   };
 
   const handleSubmit = async () => {
+    // Validierung der Pflichtfelder
+    if (!formData.name || !formData.description || !formData.category) {
+      alert('Bitte füllen Sie alle Pflichtfelder aus (Name, Beschreibung und Kategorie)');
+      return;
+    }
+
+    // Formatiere die Daten für das Backend
+    const productData = {
+      ...formData,
+      quantity: parseInt(formData.quantity, 10) || 0,
+      lockPeriodDays: parseInt(formData.lockPeriodDays, 10) || 0,
+      imageUrl: formData.imageUrl.trim() || undefined,
+      category: formData.category // Stelle sicher, dass die Kategorie-ID korrekt übergeben wird
+    };
+
     try {
-      if (editingProduct) {
-        await dispatch(updateProduct({ id: editingProduct._id, data: formData })).unwrap();
+      if (selectedProduct) {
+        const resultAction = await dispatch(updateProduct({ id: selectedProduct._id, ...productData }));
+        if (updateProduct.fulfilled.match(resultAction)) {
+          // Nach erfolgreicher Aktualisierung die Produktliste neu laden
+          dispatch(fetchProducts());
+          handleClose();
+        } else if (updateProduct.rejected.match(resultAction)) {
+          alert('Fehler beim Speichern: ' + (resultAction.payload || 'Unbekannter Fehler'));
+        }
       } else {
-        await dispatch(addProduct(formData)).unwrap();
+        const resultAction = await dispatch(createProduct(productData));
+        if (createProduct.fulfilled.match(resultAction)) {
+          // Nach erfolgreicher Erstellung die Produktliste neu laden
+          dispatch(fetchProducts());
+          handleClose();
+        } else if (createProduct.rejected.match(resultAction)) {
+          alert('Fehler beim Erstellen: ' + (resultAction.payload || 'Unbekannter Fehler'));
+        }
       }
-      handleCloseDialog();
     } catch (err) {
-      console.error('Error saving product:', err);
-      alert('Fehler beim Speichern: ' + (err.message || 'Unbekannter Fehler beim Speichern des Produkts'));
+      alert('Ein Fehler ist aufgetreten: ' + err.message);
     }
   };
 
-  const handleDelete = async (productId) => {
-    if (window.confirm('Möchten Sie dieses Produkt wirklich löschen?')) {
-      try {
-        await dispatch(deleteProduct(productId)).unwrap();
-      } catch (err) {
-        alert('Fehler beim Löschen: ' + err.message);
-      }
+  const handleDelete = (id) => {
+    if (window.confirm('Sind Sie sicher, dass Sie dieses Produkt löschen möchten?')) {
+      dispatch(deleteProduct(id));
     }
   };
-
-  const getCategoryLabel = (categoryValue) => {
-    const category = categories.find(cat => cat.value === categoryValue);
-    return category ? category.label : categoryValue;
-  };
-
-  if (status === 'loading' || categoryStatus === 'loading') {
-    return <Box sx={{ p: 2, display: 'flex', justifyContent: 'center' }}><CircularProgress /></Box>;
-  }
-
-  if (status === 'failed') {
-    return <Box sx={{ p: 2 }}><Typography color="error">{error}</Typography></Box>;
-  }
-
-  const MobileProductCard = ({ product }) => (
-    <Paper 
-      elevation={2}
-      sx={{ 
-        mb: 2, 
-        overflow: 'hidden',
-        '&:last-child': { mb: 0 }
-      }}
-    >
-      <Box sx={{ 
-        p: 2,
-        display: 'flex',
-        alignItems: 'center',
-        gap: 2,
-        borderBottom: '1px solid',
-        borderColor: 'divider'
-      }}>
-        {product.imageUrl ? (
-          <Box
-            component="img"
-            src={product.imageUrl}
-            alt={product.name}
-            sx={{
-              width: 60,
-              height: 60,
-              objectFit: 'cover',
-              borderRadius: 1,
-              flexShrink: 0
-            }}
-          />
-        ) : (
-          <Box
-            sx={{
-              width: 60,
-              height: 60,
-              borderRadius: 1,
-              bgcolor: 'grey.200',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0
-            }}
-          >
-            <Typography variant="caption" color="text.secondary">
-              Kein Bild
-            </Typography>
-          </Box>
-        )}
-        <Box sx={{ flex: 1 }}>
-          <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
-            {product.name}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {getCategoryLabel(product.category)}
-          </Typography>
-          <Typography variant="body2" color="primary" sx={{ mt: 0.5 }}>
-            {product.bookingCount || 0}x gebucht
-          </Typography>
-        </Box>
-      </Box>
-      <Box sx={{ p: 2 }}>
-        <Typography variant="body2" sx={{ mb: 2 }}>
-          {product.description}
-        </Typography>
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
-          <Button
-            size="small"
-            startIcon={<EditIcon />}
-            onClick={() => handleOpenDialog(product)}
-          >
-            Bearbeiten
-          </Button>
-          <Button
-            size="small"
-            color="error"
-            startIcon={<DeleteIcon />}
-            onClick={() => handleDelete(product._id)}
-          >
-            Löschen
-          </Button>
-        </Box>
-      </Box>
-    </Paper>
-  );
 
   return (
-    <Box sx={{ p: 2 }}>
-      <Box sx={{ 
-        mb: 3, 
-        display: 'flex', 
-        flexDirection: { xs: 'column', sm: 'row' }, 
-        gap: 2,
-        alignItems: { xs: 'stretch', sm: 'center' },
-        justifyContent: 'space-between'
-      }}>
-        <Typography variant="h6">Produkte verwalten</Typography>
+    <Box>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Typography variant="h5" component="h2">
+          Produkte verwalten
+        </Typography>
         <Button
           variant="contained"
           startIcon={<AddIcon />}
-          onClick={() => handleOpenDialog()}
-          fullWidth={isMobile}
+          onClick={() => handleOpen()}
         >
           Produkt hinzufügen
         </Button>
       </Box>
 
-      <Box sx={{ 
-        mb: 3, 
-        display: 'flex', 
-        flexDirection: { xs: 'column', sm: 'row' }, 
-        gap: 2 
-      }}>
+      {/* Filter und Suchbereich */}
+      <Box sx={{ mb: 3, display: 'flex', gap: 2 }}>
         <TextField
-          label="Produkt suchen"
+          label="Suchen"
           variant="outlined"
           size="small"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          sx={{ flexGrow: 1 }}
-          InputProps={{
-            startAdornment: (
-              <Box sx={{ color: 'text.secondary', mr: 1 }}>
-                <SearchIcon />
-              </Box>
-            ),
-          }}
+          fullWidth
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          placeholder="Nach Name oder Beschreibung suchen..."
+          sx={{ maxWidth: 400 }}
         />
-        <TextField
-          select
-          label="Kategorie"
-          value={selectedCategory}
-          onChange={(e) => setSelectedCategory(e.target.value)}
-          size="small"
-          sx={{ width: { xs: '100%', sm: 200 } }}
-        >
-          <MenuItem value="all">Alle Kategorien</MenuItem>
-          {categories.map((category) => (
-            <MenuItem key={category.value} value={category.value}>
-              {category.label}
-            </MenuItem>
-          ))}
-        </TextField>
+        <FormControl size="small" sx={{ minWidth: 200 }}>
+          <InputLabel>Kategorie Filter</InputLabel>
+          <Select
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
+            label="Kategorie Filter"
+          >
+            <MenuItem value="all">Alle Kategorien</MenuItem>
+            {categories.map((category) => (
+              <MenuItem key={category._id} value={category._id}>
+                {category.label}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
       </Box>
 
-      {isMobile ? (
-        // Mobile Ansicht
-        <Box>
-          {filteredProducts.map((product) => (
-            <MobileProductCard key={product._id} product={product} />
-          ))}
-        </Box>
-      ) : (
-        // Desktop Ansicht
-        <TableContainer component={Paper}>
-          <Table>
-            <TableHead>
+      <TableContainer component={Paper}>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>Name</TableCell>
+              <TableCell>Beschreibung</TableCell>
+              <TableCell>Kategorie</TableCell>
+              <TableCell>Verfügbare Menge</TableCell>
+              <TableCell>Bild</TableCell>
+              <TableCell>Sperrzeit (Tage)</TableCell>
+              <TableCell>Aktionen</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {filteredProducts.length === 0 ? (
               <TableRow>
-                <TableCell>Name</TableCell>
-                <TableCell>Kategorie</TableCell>
-                <TableCell>Beschreibung</TableCell>
-                <TableCell>Bild</TableCell>
-                <TableCell align="center">Buchungen</TableCell>
-                <TableCell align="right">Aktionen</TableCell>
+                <TableCell colSpan={7} align="center">
+                  <Typography variant="body1" sx={{ py: 2 }}>
+                    Keine Produkte gefunden
+                  </Typography>
+                </TableCell>
               </TableRow>
-            </TableHead>
-            <TableBody>
-              {filteredProducts.map((product) => (
+            ) : (
+              filteredProducts.map((product) => (
                 <TableRow key={product._id}>
                   <TableCell>{product.name}</TableCell>
-                  <TableCell>{getCategoryLabel(product.category)}</TableCell>
                   <TableCell>{product.description}</TableCell>
+                  <TableCell>{product.category?.label || 'Keine Kategorie'}</TableCell>
+                  <TableCell>{product.quantity}</TableCell>
                   <TableCell>
-                    {product.imageUrl ? (
-                      <Box
-                        component="img"
-                        src={product.imageUrl}
-                        alt={product.name}
-                        sx={{
-                          width: 100,
-                          height: 100,
-                          objectFit: 'cover',
-                          borderRadius: 1,
-                          border: '1px solid',
-                          borderColor: 'divider'
-                        }}
+                    {product.imageUrl && (
+                      <img 
+                        src={product.imageUrl} 
+                        alt={product.name} 
+                        style={{ width: '50px', height: '50px', objectFit: 'cover' }}
                       />
-                    ) : (
-                      <Typography variant="body2" color="text.secondary">
-                        Kein Bild
-                      </Typography>
                     )}
                   </TableCell>
-                  <TableCell align="center">
-                    <Typography 
-                      variant="body2" 
-                      color="primary"
-                      sx={{ fontWeight: 'medium' }}
-                    >
-                      {product.bookingCount || 0}x
-                    </Typography>
-                  </TableCell>
-                  <TableCell align="right">
-                    <IconButton 
-                      size="small" 
-                      onClick={() => handleOpenDialog(product)}
-                      sx={{ mr: 1 }}
-                    >
+                  <TableCell>{product.lockPeriodDays || 0}</TableCell>
+                  <TableCell>
+                    <IconButton onClick={() => handleOpen(product)} color="primary">
                       <EditIcon />
                     </IconButton>
-                    <IconButton 
-                      size="small" 
-                      color="error"
-                      onClick={() => handleDelete(product._id)}
-                    >
+                    <IconButton onClick={() => handleDelete(product._id)} color="error">
                       <DeleteIcon />
                     </IconButton>
                   </TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      )}
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </TableContainer>
 
-      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
+      <Dialog 
+        open={open} 
+        onClose={handleClose}
+        maxWidth="md"
+        fullWidth
+      >
         <DialogTitle>
-          {editingProduct ? 'Produkt bearbeiten' : 'Neues Produkt hinzufügen'}
+          {selectedProduct ? 'Produkt bearbeiten' : 'Neues Produkt hinzufügen'}
         </DialogTitle>
         <DialogContent>
-          <Box sx={{ pt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <Box sx={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            gap: 2.5, 
+            pt: 2,
+            width: '100%'
+          }}>
             <TextField
-              name="name"
               label="Name"
-              fullWidth
               value={formData.name}
-              onChange={handleInputChange}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              fullWidth
+              required
+              variant="outlined"
+              error={!formData.name}
+              helperText={!formData.name ? 'Name ist erforderlich' : ''}
             />
             <TextField
-              name="category"
-              label="Kategorie"
-              select
-              fullWidth
-              value={formData.category}
-              onChange={handleInputChange}
-            >
-              {categories.map((category) => (
-                <MenuItem key={category.value} value={category.value}>
-                  {category.label}
-                </MenuItem>
-              ))}
-            </TextField>
-            <TextField
-              name="description"
               label="Beschreibung"
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               fullWidth
               multiline
               rows={3}
-              value={formData.description}
-              onChange={handleInputChange}
+              variant="outlined"
+              required
+              error={!formData.description}
+              helperText={!formData.description ? 'Beschreibung ist erforderlich' : ''}
             />
             <TextField
-              name="imageUrl"
-              label="Bild-URL"
-              fullWidth
+              label="Bild URL"
               value={formData.imageUrl}
-              onChange={handleInputChange}
+              onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
+              fullWidth
+              variant="outlined"
+              type="url"
+              helperText="Optionale URL für ein Produktbild"
             />
+            <FormControl fullWidth variant="outlined" required error={!formData.category}>
+              <InputLabel>Kategorie</InputLabel>
+              <Select
+                value={formData.category}
+                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                label="Kategorie"
+              >
+                {categories.map((category) => (
+                  <MenuItem key={category._id} value={category._id}>
+                    {category.label}
+                  </MenuItem>
+                ))}
+              </Select>
+              {!formData.category && (
+                <FormHelperText>Kategorie ist erforderlich</FormHelperText>
+              )}
+            </FormControl>
+            <TextField
+              label="Verfügbare Menge"
+              type="number"
+              value={formData.quantity}
+              onChange={(e) => setFormData({ ...formData, quantity: parseInt(e.target.value, 10) })}
+              fullWidth
+              required
+              variant="outlined"
+              InputProps={{ inputProps: { min: 0 } }}
+            />
+            <TextField
+              label="Sperrzeit nach Buchung (Tage)"
+              type="number"
+              value={formData.lockPeriodDays}
+              onChange={(e) => setFormData({ ...formData, lockPeriodDays: parseInt(e.target.value, 10) || 0 })}
+              fullWidth
+              variant="outlined"
+              InputProps={{ 
+                inputProps: { min: 0 },
+              }}
+              helperText="Anzahl der Tage, die das Produkt nach einer Buchung gesperrt bleibt (z.B. für Wartung/Auslesen)"
+            />
+            {formData.imageUrl && (
+              <Box sx={{ mt: 2, textAlign: 'center' }}>
+                <Typography variant="subtitle2" gutterBottom>
+                  Bildvorschau:
+                </Typography>
+                <img 
+                  src={formData.imageUrl} 
+                  alt="Vorschau"
+                  style={{ 
+                    maxWidth: '100%', 
+                    maxHeight: '200px', 
+                    objectFit: 'contain',
+                    border: '1px solid #ddd',
+                    borderRadius: '4px'
+                  }}
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                    alert('Bild konnte nicht geladen werden. Bitte überprüfen Sie die URL.');
+                  }}
+                />
+              </Box>
+            )}
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseDialog}>Abbrechen</Button>
-          <Button onClick={handleSubmit} variant="contained">
-            {editingProduct ? 'Speichern' : 'Hinzufügen'}
+          <Button onClick={handleClose}>Abbrechen</Button>
+          <Button 
+            onClick={handleSubmit} 
+            variant="contained"
+            disabled={status === 'loading'}
+          >
+            {status === 'loading' ? 'Wird gespeichert...' : (selectedProduct ? 'Speichern' : 'Hinzufügen')}
           </Button>
         </DialogActions>
       </Dialog>

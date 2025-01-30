@@ -1,29 +1,16 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import axios from 'axios';
-
-// Nutze den in vite.config.js konfigurierten Proxy
-const API_URL = '/api';
+import api from '../services/api';
 
 // Async Thunks
 export const createBooking = createAsyncThunk(
   'bookings/createBooking',
   async (bookingData, { rejectWithValue }) => {
     try {
-      // Ensure dates are in ISO format and create a clean booking object
-      const formattedBookingData = {
-        customerName: bookingData.customerName,
-        customerEmail: bookingData.customerEmail,
-        notes: bookingData.notes || '',
-        items: bookingData.items.map(item => ({
-          productId: item.productId,
-          startDate: new Date(item.startDate).toISOString(),
-          endDate: new Date(item.endDate).toISOString()
-        }))
-      };
-
-      const response = await axios.post(`${API_URL}/bookings`, formattedBookingData);
+      console.log('Sending booking data:', bookingData); // Debug-Log
+      const response = await api.post('/bookings', bookingData);
       return response.data;
     } catch (error) {
+      console.error('Booking error:', error); // Debug-Log
       if (error.response?.data) {
         return rejectWithValue(error.response.data);
       }
@@ -35,21 +22,17 @@ export const createBooking = createAsyncThunk(
 );
 
 export const fetchBookings = createAsyncThunk(
-  'bookings/fetchAll',
-  async (_, { rejectWithValue }) => {
-    try {
-      const response = await axios.get(`${API_URL}/bookings`);
-      return response.data;
-    } catch (error) {
-      return rejectWithValue(error.response?.data || { message: error.message });
-    }
+  'bookings/fetchBookings',
+  async () => {
+    const response = await api.get('/bookings');
+    return response.data;
   }
 );
 
-export const updateBookingStatus = createAsyncThunk(
-  'bookings/updateStatus',
-  async ({ id, status }) => {
-    const response = await axios.patch(`${API_URL}/bookings/${id}/status`, { status });
+export const updateBooking = createAsyncThunk(
+  'bookings/update',
+  async ({ id, ...bookingData }) => {
+    const response = await api.put(`/bookings/${id}`, bookingData);
     return response.data;
   }
 );
@@ -57,8 +40,16 @@ export const updateBookingStatus = createAsyncThunk(
 export const deleteBooking = createAsyncThunk(
   'bookings/delete',
   async (bookingId) => {
-    const response = await axios.delete(`${API_URL}/bookings/${bookingId}`);
+    await api.delete(`/bookings/${bookingId}`);
     return bookingId;
+  }
+);
+
+export const updateBookingReturn = createAsyncThunk(
+  'bookings/updateBookingReturn',
+  async ({ bookingId, items }) => {
+    const response = await api.put(`/bookings/${bookingId}/return`, { items });
+    return response.data;
   }
 );
 
@@ -89,14 +80,15 @@ const bookingSlice = createSlice({
     builder
       .addCase(createBooking.pending, (state) => {
         state.status = 'loading';
+        state.error = null;
       })
       .addCase(createBooking.fulfilled, (state, action) => {
         state.status = 'succeeded';
-        state.items.push(action.payload);
+        state.items.unshift(action.payload);
       })
       .addCase(createBooking.rejected, (state, action) => {
         state.status = 'failed';
-        state.error = action.error.message;
+        state.error = action.payload?.message || action.error.message;
       })
       .addCase(fetchBookings.pending, (state) => {
         state.status = 'loading';
@@ -109,22 +101,20 @@ const bookingSlice = createSlice({
         state.status = 'failed';
         state.error = action.error.message;
       })
-      .addCase(updateBookingStatus.fulfilled, (state, action) => {
+      .addCase(updateBooking.fulfilled, (state, action) => {
         const index = state.items.findIndex(booking => booking._id === action.payload._id);
         if (index !== -1) {
           state.items[index] = action.payload;
         }
       })
-      .addCase(deleteBooking.pending, (state) => {
-        state.status = 'loading';
-      })
       .addCase(deleteBooking.fulfilled, (state, action) => {
-        state.status = 'succeeded';
         state.items = state.items.filter(booking => booking._id !== action.payload);
       })
-      .addCase(deleteBooking.rejected, (state, action) => {
-        state.status = 'failed';
-        state.error = action.error.message;
+      .addCase(updateBookingReturn.fulfilled, (state, action) => {
+        const index = state.items.findIndex(booking => booking._id === action.payload._id);
+        if (index !== -1) {
+          state.items[index] = action.payload;
+        }
       });
   }
 });

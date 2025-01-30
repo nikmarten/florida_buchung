@@ -1,55 +1,51 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 
-// Nutze den in vite.config.js konfigurierten Proxy
-const API_URL = import.meta.env.VITE_API_URL;
-
-// Helper-Funktion für den Auth-Header
-const getAuthHeader = () => {
-  const token = localStorage.getItem('token');
-  return token ? { Authorization: `Bearer ${token}` } : {};
-};
-
 export const fetchCategories = createAsyncThunk(
   'categories/fetchCategories',
-  async () => {
-    const response = await axios.get(`${API_URL}/categories`);
-    return response.data;
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await axios.get('/api/categories');
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || 'Fehler beim Laden der Kategorien');
+    }
   }
 );
 
 export const addCategory = createAsyncThunk(
   'categories/addCategory',
-  async (category) => {
-    const response = await axios.post(`${API_URL}/categories`, category, {
-      headers: getAuthHeader()
-    });
-    return response.data;
+  async (categoryData, { rejectWithValue }) => {
+    try {
+      const response = await axios.post('/api/categories', categoryData);
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || 'Fehler beim Erstellen der Kategorie');
+    }
   }
 );
 
 export const updateCategory = createAsyncThunk(
   'categories/updateCategory',
-  async (category) => {
-    const response = await axios.put(`${API_URL}/categories/${category._id}`, {
-      label: category.label,
-      value: category.value,
-      order: category.order,
-      description: category.description
-    }, {
-      headers: getAuthHeader()
-    });
-    return response.data;
+  async ({ id, ...categoryData }, { rejectWithValue }) => {
+    try {
+      const response = await axios.put(`/api/categories/${id}`, categoryData);
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || 'Fehler beim Aktualisieren der Kategorie');
+    }
   }
 );
 
 export const deleteCategory = createAsyncThunk(
   'categories/deleteCategory',
-  async (id) => {
-    await axios.delete(`${API_URL}/categories/${id}`, {
-      headers: getAuthHeader()
-    });
-    return id;
+  async (id, { rejectWithValue }) => {
+    try {
+      await axios.delete(`/api/categories/${id}`);
+      return id;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || 'Fehler beim Löschen der Kategorie');
+    }
   }
 );
 
@@ -82,7 +78,7 @@ const categorySlice = createSlice({
       })
       .addCase(fetchCategories.rejected, (state, action) => {
         state.status = 'failed';
-        state.error = action.error.message;
+        state.error = action.payload || 'Ein Fehler ist aufgetreten';
       })
       // Add Category
       .addCase(addCategory.pending, (state) => {
@@ -96,18 +92,38 @@ const categorySlice = createSlice({
       })
       .addCase(addCategory.rejected, (state, action) => {
         state.status = 'failed';
-        state.error = action.error.message;
+        state.error = action.payload || 'Ein Fehler ist aufgetreten';
       })
       // Update Category
+      .addCase(updateCategory.pending, (state) => {
+        state.status = 'loading';
+        state.error = null;
+      })
       .addCase(updateCategory.fulfilled, (state, action) => {
+        state.status = 'succeeded';
         const index = state.items.findIndex(item => item._id === action.payload._id);
         if (index !== -1) {
           state.items[index] = action.payload;
         }
+        state.error = null;
+      })
+      .addCase(updateCategory.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.payload || 'Ein Fehler ist aufgetreten';
       })
       // Delete Category
+      .addCase(deleteCategory.pending, (state) => {
+        state.status = 'loading';
+        state.error = null;
+      })
       .addCase(deleteCategory.fulfilled, (state, action) => {
+        state.status = 'succeeded';
         state.items = state.items.filter(item => item._id !== action.payload);
+        state.error = null;
+      })
+      .addCase(deleteCategory.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.payload || 'Ein Fehler ist aufgetreten';
       });
   }
 });

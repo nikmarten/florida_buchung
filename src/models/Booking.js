@@ -12,17 +12,25 @@ const bookingSchema = new mongoose.Schema({
     trim: true,
     lowercase: true
   },
+  phone: {
+    type: String,
+    trim: true
+  },
   status: {
     type: String,
-    required: true,
-    enum: ['pending', 'confirmed', 'cancelled'],
+    enum: ['pending', 'confirmed', 'cancelled', 'completed'],
     default: 'pending'
   },
   items: [{
-    productId: {
+    product: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Product',
       required: true
+    },
+    quantity: {
+      type: Number,
+      required: true,
+      min: 1
     },
     startDate: {
       type: Date,
@@ -31,15 +39,33 @@ const bookingSchema = new mongoose.Schema({
     endDate: {
       type: Date,
       required: true
-    }
+    },
+    returnStatus: {
+      type: String,
+      enum: ['pending', 'returned', 'damaged', 'lost'],
+      default: 'pending'
+    },
+    returnDate: {
+      type: Date
+    },
+    notes: String
   }],
-  notes: {
-    type: String
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now
-  }
+  notes: String
+}, {
+  timestamps: true
 });
 
-export default mongoose.models.Booking || mongoose.model('Booking', bookingSchema); 
+// Validate endDate is after startDate
+bookingSchema.pre('save', function(next) {
+  for (const item of this.items) {
+    if (item.endDate <= item.startDate) {
+      next(new Error('End date must be after start date'));
+      return;
+    }
+  }
+  next();
+});
+
+const Booking = mongoose.model('Booking', bookingSchema);
+
+export default Booking; 

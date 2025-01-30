@@ -17,6 +17,7 @@ export default function EquipmentList() {
   const { items: bookings } = useSelector((state) => state.bookings);
   const startDate = useSelector((state) => state.bookings.startDate);
   const endDate = useSelector((state) => state.bookings.endDate);
+  const [quantities, setQuantities] = useState({});
 
   useEffect(() => {
     if (productsStatus === 'idle') {
@@ -39,6 +40,17 @@ export default function EquipmentList() {
 
   const handleSortChange = (event) => {
     setSortOption(event.target.value);
+  };
+
+  const handleQuantityChange = (equipmentId, value) => {
+    const numValue = parseInt(value);
+    const equipment = products.find(p => p._id === equipmentId);
+    if (equipment && numValue > 0 && numValue <= equipment.quantity) {
+      setQuantities(prev => ({
+        ...prev,
+        [equipmentId]: numValue
+      }));
+    }
   };
 
   // Prüfe, ob ein Produkt im gewünschten Zeitraum verfügbar ist
@@ -73,7 +85,8 @@ export default function EquipmentList() {
     .filter(product => {
       const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           product.description.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesCategory = selectedCategory === 'ALL' || product.category === selectedCategory;
+      const matchesCategory = selectedCategory === 'ALL' || 
+                            (product.category && product.category._id === selectedCategory);
       return matchesSearch && matchesCategory;
     })
     .sort((a, b) => {
@@ -87,14 +100,21 @@ export default function EquipmentList() {
       }
     });
 
-  const allCategories = [{ value: 'ALL', label: 'Alle Kategorien' }, ...(categories || [])];
+  const allCategories = [
+    { _id: 'ALL', label: 'Alle Kategorien' }, 
+    ...(categories || [])
+  ];
   const isTimeRangeSelected = startDate && endDate;
 
   const handleAddToCart = (equipment) => {
     dispatch(addToCart({
-      equipment,
+      productId: equipment._id,
+      productName: equipment.name,
+      productDescription: equipment.description,
+      productImageUrl: equipment.imageUrl,
       startDate,
-      endDate
+      endDate,
+      quantity: quantities[equipment._id] || 1
     }));
   };
 
@@ -117,13 +137,14 @@ export default function EquipmentList() {
           sx={{ flexGrow: 1, maxWidth: { sm: 400 } }}
         />
         <FormControl sx={{ minWidth: 200 }}>
+          <InputLabel>Kategorie</InputLabel>
           <Select
             value={selectedCategory}
             onChange={handleCategoryChange}
-            displayEmpty
+            label="Kategorie"
           >
             {allCategories.map((category) => (
-              <MenuItem key={category.value} value={category.value}>
+              <MenuItem key={category._id} value={category._id}>
                 {category.label}
               </MenuItem>
             ))}
@@ -136,8 +157,8 @@ export default function EquipmentList() {
             onChange={handleSortChange}
             label="Sortierung"
           >
-            <MenuItem value="popularity">Nach Beliebtheit</MenuItem>
-            <MenuItem value="alphabetical">Alphabetisch</MenuItem>
+            <MenuItem key="popularity" value="popularity">Nach Beliebtheit</MenuItem>
+            <MenuItem key="alphabetical" value="alphabetical">Alphabetisch</MenuItem>
           </Select>
         </FormControl>
       </Box>
@@ -174,24 +195,53 @@ export default function EquipmentList() {
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                       {equipment.description}
                     </Typography>
-                    {isTimeRangeSelected && !available && (
-                      <Alert severity="error" sx={{ mb: 2 }}>
-                        Im gewählten Zeitraum nicht verfügbar
-                      </Alert>
+                    
+                    {isTimeRangeSelected && (
+                      <Box sx={{ mb: 2 }}>
+                        {available ? (
+                          <Alert severity="success" icon={false}>
+                            Im gewählten Zeitraum verfügbar
+                          </Alert>
+                        ) : (
+                          <Alert severity="error" icon={false}>
+                            Im gewählten Zeitraum nicht verfügbar
+                          </Alert>
+                        )}
+                      </Box>
                     )}
-                    <Button
-                      variant={isTimeRangeSelected ? "contained" : "outlined"}
-                      color="primary"
-                      onClick={() => handleAddToCart(equipment)}
-                      disabled={!isTimeRangeSelected || !available}
-                      sx={{ mt: 'auto' }}
-                    >
-                      {!isTimeRangeSelected 
-                        ? "Zeitraum auswählen"
-                        : available 
-                          ? "In den Warenkorb" 
-                          : "Nicht verfügbar"}
-                    </Button>
+                    
+                    <Box sx={{ mt: 'auto' }}>
+                      {isTimeRangeSelected && available && (
+                        <TextField
+                          fullWidth
+                          label="Menge"
+                          type="number"
+                          value={quantities[equipment._id] || 1}
+                          onChange={(e) => handleQuantityChange(equipment._id, e.target.value)}
+                          sx={{ mb: 2 }}
+                          InputProps={{
+                            inputProps: { 
+                              min: 1, 
+                              max: equipment.quantity 
+                            }
+                          }}
+                          helperText={`Maximal verfügbar: ${equipment.quantity} Stück`}
+                        />
+                      )}
+                      <Button
+                        fullWidth
+                        variant={isTimeRangeSelected ? "contained" : "outlined"}
+                        color="primary"
+                        onClick={() => handleAddToCart(equipment)}
+                        disabled={!isTimeRangeSelected || !available}
+                      >
+                        {!isTimeRangeSelected 
+                          ? "Zeitraum auswählen"
+                          : available 
+                            ? "In den Warenkorb" 
+                            : "Nicht verfügbar"}
+                      </Button>
+                    </Box>
                   </CardContent>
                 </Card>
               </Grid>

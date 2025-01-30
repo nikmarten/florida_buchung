@@ -1,21 +1,12 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import axios from 'axios';
+import api from '../services/api';
 
-// Nutze den in vite.config.js konfigurierten Proxy
-const API_URL = '/api';
-
+// Async Thunks
 export const fetchProducts = createAsyncThunk(
   'products/fetchProducts',
-  async (_, { rejectWithValue }) => {
-    try {
-      console.log('Fetching products from:', `${API_URL}/products`);
-      const response = await axios.get(`${API_URL}/products`);
-      console.log('Fetched products:', response.data);
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching products:', error);
-      return rejectWithValue(error.response?.data?.message || error.message);
-    }
+  async () => {
+    const response = await api.get('/products');
+    return response.data;
   }
 );
 
@@ -23,45 +14,24 @@ export const addProduct = createAsyncThunk(
   'products/addProduct',
   async (productData, { rejectWithValue }) => {
     try {
-      console.log('Adding product:', productData);
-      const response = await axios.post(`${API_URL}/products`, productData);
-      console.log('Server response:', response);
-      if (!response.data) {
-        throw new Error('Keine Daten vom Server erhalten');
-      }
+      const response = await api.post('/products', productData);
       return response.data;
     } catch (error) {
-      console.error('Error details:', {
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status
-      });
-      return rejectWithValue(
-        error.response?.data?.message || 
-        error.response?.data || 
-        error.message || 
-        'Fehler beim Speichern des Produkts'
-      );
+      console.error('Fehler beim Erstellen des Produkts:', error.response?.data || error.message);
+      return rejectWithValue(error.response?.data || error.message);
     }
   }
 );
 
 export const updateProduct = createAsyncThunk(
   'products/updateProduct',
-  async ({ id, data }, { rejectWithValue }) => {
+  async ({ id, ...productData }, { rejectWithValue }) => {
     try {
-      const response = await axios.put(`${API_URL}/products/${id}`, data);
-      if (!response.data) {
-        throw new Error('Keine Daten vom Server erhalten');
-      }
+      const response = await api.put(`/products/${id}`, productData);
       return response.data;
     } catch (error) {
-      return rejectWithValue(
-        error.response?.data?.message || 
-        error.response?.data || 
-        error.message || 
-        'Fehler beim Aktualisieren des Produkts'
-      );
+      console.error('Fehler beim Aktualisieren des Produkts:', error.response?.data || error.message);
+      return rejectWithValue(error.response?.data || error.message);
     }
   }
 );
@@ -69,62 +39,59 @@ export const updateProduct = createAsyncThunk(
 export const deleteProduct = createAsyncThunk(
   'products/deleteProduct',
   async (id) => {
-    await axios.delete(`${API_URL}/products/${id}`);
+    await api.delete(`/products/${id}`);
     return id;
   }
 );
 
-const initialState = {
-  items: [],
-  status: 'idle',
-  error: null
-};
-
 const productSlice = createSlice({
   name: 'products',
-  initialState,
-  reducers: {
-    resetStatus: (state) => {
-      state.status = 'idle';
-      state.error = null;
-    }
+  initialState: {
+    items: [],
+    status: 'idle',
+    error: null
   },
+  reducers: {},
   extraReducers: (builder) => {
     builder
       // Fetch Products
       .addCase(fetchProducts.pending, (state) => {
         state.status = 'loading';
-        state.error = null;
       })
       .addCase(fetchProducts.fulfilled, (state, action) => {
         state.status = 'succeeded';
         state.items = action.payload;
-        state.error = null;
       })
       .addCase(fetchProducts.rejected, (state, action) => {
         state.status = 'failed';
-        state.error = action.payload || action.error.message;
+        state.error = action.error.message;
       })
       // Add Product
       .addCase(addProduct.pending, (state) => {
         state.status = 'loading';
-        state.error = null;
       })
       .addCase(addProduct.fulfilled, (state, action) => {
         state.status = 'succeeded';
         state.items.push(action.payload);
-        state.error = null;
       })
       .addCase(addProduct.rejected, (state, action) => {
         state.status = 'failed';
-        state.error = action.payload || action.error.message;
+        state.error = action.payload || 'Ein Fehler ist aufgetreten';
       })
       // Update Product
+      .addCase(updateProduct.pending, (state) => {
+        state.status = 'loading';
+      })
       .addCase(updateProduct.fulfilled, (state, action) => {
+        state.status = 'succeeded';
         const index = state.items.findIndex(item => item._id === action.payload._id);
         if (index !== -1) {
           state.items[index] = action.payload;
         }
+      })
+      .addCase(updateProduct.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.payload || 'Ein Fehler ist aufgetreten';
       })
       // Delete Product
       .addCase(deleteProduct.fulfilled, (state, action) => {
@@ -133,5 +100,4 @@ const productSlice = createSlice({
   }
 });
 
-export const { resetStatus } = productSlice.actions;
 export default productSlice.reducer; 

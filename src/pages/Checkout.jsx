@@ -1,37 +1,31 @@
-import React, { useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import React from 'react';
+import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Box, 
-  Container, 
-  Paper, 
-  Typography, 
-  Grid, 
+import {
+  Box,
+  Typography,
+  Paper,
+  Grid,
+  Card,
+  CardContent,
+  Divider,
+  List,
+  ListItem,
+  ListItemText,
+  Container,
   Button,
-  TextField,
-  Alert,
-  Snackbar,
+  useTheme
 } from '@mui/material';
+import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
-import { clearCart } from '../store/cartSlice';
-import { createBooking } from '../store/bookingSlice';
+import CheckoutForm from '../components/CheckoutForm';
 
 export default function Checkout() {
-  const dispatch = useDispatch();
+  const theme = useTheme();
   const navigate = useNavigate();
   const cartItems = useSelector((state) => state.cart.items);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [error, setError] = useState(null);
-  const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    notes: ''
-  });
-  const [errors, setErrors] = useState({});
 
   const formatDate = (dateString) => {
     if (!dateString) return '';
@@ -39,234 +33,161 @@ export default function Checkout() {
     return format(date, 'dd.MM.yyyy', { locale: de });
   };
 
-  const validateForm = () => {
-    const newErrors = {};
-    if (!formData.firstName) newErrors.firstName = 'Vorname ist erforderlich';
-    if (!formData.lastName) newErrors.lastName = 'Nachname ist erforderlich';
-    if (!formData.email) {
-      newErrors.email = 'E-Mail ist erforderlich';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Ungültige E-Mail-Adresse';
-    }
-    if (!formData.phone) newErrors.phone = 'Telefonnummer ist erforderlich';
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = async () => {
-    if (!validateForm()) return;
-    
-    setIsSubmitting(true);
-    setError(null);
-
-    const bookingData = {
-      customerName: `${formData.firstName} ${formData.lastName}`,
-      customerEmail: formData.email,
-      phone: formData.phone,
-      notes: formData.notes,
-      items: cartItems.map(item => ({
-        productId: item.equipment._id,
-        startDate: item.startDate,
-        endDate: item.endDate
-      }))
-    };
-
-    try {
-      const result = await dispatch(createBooking(bookingData)).unwrap();
-      
-      if (result && result._id) {
-        setShowSuccess(true);
-        setTimeout(() => {
-          dispatch(clearCart());
-          navigate(`/booking-confirmation/${result._id}`);
-        }, 1000);
-      } else {
-        setError('Unerwarteter Fehler: Keine Buchungs-ID erhalten');
-      }
-    } catch (error) {
-      setError(error.message || 'Die Buchung konnte nicht abgeschlossen werden. Bitte versuchen Sie es später erneut.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
+  if (cartItems.length === 0) {
+    return (
+      <Container maxWidth="md">
+        <Box sx={{ 
+          py: 8,
+          textAlign: 'center',
+          minHeight: '60vh',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+          gap: 3
+        }}>
+          <ShoppingCartIcon sx={{ fontSize: 60, color: 'text.secondary' }} />
+          <Typography variant="h4" gutterBottom>
+            Ihr Warenkorb ist leer
+          </Typography>
+          <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
+            Bitte fügen Sie Produkte zu Ihrem Warenkorb hinzu, bevor Sie zur Kasse gehen.
+          </Typography>
+          <Button
+            variant="contained"
+            startIcon={<ArrowBackIcon />}
+            onClick={() => navigate('/booking')}
+          >
+            Zurück zur Buchung
+          </Button>
+        </Box>
+      </Container>
+    );
+  }
 
   return (
     <Container maxWidth="lg">
-      <Box sx={{ mt: { xs: 2, sm: 4 }, mb: { xs: 4, sm: 8 } }}>
-        <Typography variant="h4" component="h1" gutterBottom>
-          Checkout
-        </Typography>
+      <Box sx={{ py: 4 }}>
+        {/* Header */}
+        <Box sx={{ mb: 4, textAlign: 'center' }}>
+          <Typography 
+            variant="h4" 
+            component="h1" 
+            gutterBottom
+            sx={{ 
+              fontWeight: 'bold',
+              color: 'primary.main'
+            }}
+          >
+            Buchung abschließen
+          </Typography>
+          <Typography 
+            variant="subtitle1" 
+            color="text.secondary"
+            sx={{ maxWidth: 600, mx: 'auto' }}
+          >
+            Überprüfen Sie Ihre Auswahl und geben Sie Ihre Kontaktdaten ein, 
+            um die Buchung abzuschließen.
+          </Typography>
+        </Box>
 
-        {cartItems.length === 0 ? (
-          <Paper sx={{ p: { xs: 2, sm: 3 }, mt: 3 }}>
-            <Typography>Dein Warenkorb ist leer.</Typography>
-            <Button
-              variant="contained"
-              onClick={() => navigate('/booking')}
-              sx={{ mt: 2 }}
+        <Grid container spacing={4}>
+          {/* Produktübersicht */}
+          <Grid item xs={12} md={7}>
+            <Card 
+              elevation={3}
+              sx={{ 
+                height: '100%',
+                background: theme.palette.mode === 'dark' 
+                  ? 'linear-gradient(45deg, #1a237e 30%, #283593 90%)'
+                  : 'linear-gradient(45deg, #e3f2fd 30%, #bbdefb 90%)',
+              }}
             >
-              Zurück zur Buchung
-            </Button>
-          </Paper>
-        ) : (
-          <Grid container spacing={3}>
-            <Grid item xs={12} md={8}>
-              <Paper sx={{ p: { xs: 2, sm: 3 }, mb: { xs: 2, sm: 3 } }}>
-                <Typography variant="h6" gutterBottom>
-                  Kontaktdaten
+              <CardContent>
+                <Typography 
+                  variant="h6" 
+                  gutterBottom
+                  sx={{ 
+                    color: theme.palette.mode === 'dark' ? 'white' : 'primary.main',
+                    borderBottom: '2px solid',
+                    borderColor: 'primary.main',
+                    pb: 1,
+                    mb: 3
+                  }}
+                >
+                  Ausgewählte Produkte
                 </Typography>
-                <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
-                  <Grid container spacing={2}>
-                    <Grid item xs={12} sm={6}>
-                      <TextField
-                        required
-                        fullWidth
-                        label="Vorname"
-                        name="firstName"
-                        value={formData.firstName}
-                        onChange={handleChange}
-                        error={!!errors.firstName}
-                        helperText={errors.firstName}
-                        size="small"
-                      />
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
-                      <TextField
-                        required
-                        fullWidth
-                        label="Nachname"
-                        name="lastName"
-                        value={formData.lastName}
-                        onChange={handleChange}
-                        error={!!errors.lastName}
-                        helperText={errors.lastName}
-                        size="small"
-                      />
-                    </Grid>
-                    <Grid item xs={12}>
-                      <TextField
-                        required
-                        fullWidth
-                        label="E-Mail"
-                        name="email"
-                        type="email"
-                        value={formData.email}
-                        onChange={handleChange}
-                        error={!!errors.email}
-                        helperText={errors.email}
-                        size="small"
-                      />
-                    </Grid>
-                    <Grid item xs={12}>
-                      <TextField
-                        required
-                        fullWidth
-                        label="Telefon"
-                        name="phone"
-                        value={formData.phone}
-                        onChange={handleChange}
-                        error={!!errors.phone}
-                        helperText={errors.phone}
-                        size="small"
-                      />
-                    </Grid>
-                    <Grid item xs={12}>
-                      <TextField
-                        fullWidth
-                        label="Anmerkungen"
-                        name="notes"
-                        multiline
-                        rows={4}
-                        value={formData.notes}
-                        onChange={handleChange}
-                        size="small"
-                      />
-                    </Grid>
-                  </Grid>
-                </form>
-              </Paper>
-            </Grid>
+                <Paper sx={{ p: 2, backgroundColor: 'background.paper' }}>
+                  <List>
+                    {cartItems.map((item) => (
+                      <React.Fragment key={`${item.productId}-${item.startDate}-${item.endDate}`}>
+                        <ListItem>
+                          <Box sx={{ width: '100%' }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <Typography variant="subtitle1">
+                                {item.productName}
+                              </Typography>
+                              <Typography 
+                                variant="body2" 
+                                component="span"
+                                sx={{ 
+                                  backgroundColor: 'primary.main', 
+                                  color: 'primary.contrastText',
+                                  px: 1,
+                                  py: 0.5,
+                                  borderRadius: 1,
+                                  fontSize: '0.75rem'
+                                }}
+                              >
+                                {item.quantity}x
+                              </Typography>
+                            </Box>
+                            <Box sx={{ mt: 1 }}>
+                              <Typography variant="body2" color="text.secondary">
+                                {item.productDescription}
+                              </Typography>
+                              <Typography variant="body2" color="text.secondary">
+                                Zeitraum: {formatDate(item.startDate)} - {formatDate(item.endDate)}
+                              </Typography>
+                            </Box>
+                          </Box>
+                        </ListItem>
+                        <Divider />
+                      </React.Fragment>
+                    ))}
+                  </List>
+                </Paper>
+              </CardContent>
+            </Card>
+          </Grid>
 
-            <Grid item xs={12} md={4}>
-              <Paper 
+          {/* Buchungsformular */}
+          <Grid item xs={12} md={5}>
+            <Paper 
+              elevation={3}
+              sx={{ 
+                p: 3,
+                height: '100%',
+                backgroundColor: 'background.paper'
+              }}
+            >
+              <Typography 
+                variant="h6" 
+                gutterBottom
                 sx={{ 
-                  p: { xs: 2, sm: 3 },
-                  position: { md: 'sticky' },
-                  top: 24
+                  borderBottom: '2px solid',
+                  borderColor: 'primary.main',
+                  pb: 1,
+                  mb: 3
                 }}
               >
-                <Typography variant="h6" gutterBottom>
-                  Zusammenfassung
-                </Typography>
-                <Box sx={{ mb: 2 }}>
-                  {cartItems.map((item) => (
-                    <Box
-                      key={item.id}
-                      sx={{
-                        py: 1,
-                        borderBottom: '1px solid',
-                        borderColor: 'divider',
-                        '&:last-child': { borderBottom: 0 }
-                      }}
-                    >
-                      <Typography variant="subtitle2">
-                        {item.equipment.name}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {formatDate(item.startDate)} - {formatDate(item.endDate)}
-                      </Typography>
-                    </Box>
-                  ))}
-                </Box>
-                <Typography gutterBottom>
-                  Anzahl Produkte: {cartItems.length}
-                </Typography>
-                <Button
-                  variant="contained"
-                  fullWidth
-                  size="large"
-                  onClick={handleSubmit}
-                  disabled={isSubmitting}
-                  sx={{ mt: 2 }}
-                >
-                  {isSubmitting ? 'Wird gebucht...' : 'Jetzt buchen'}
-                </Button>
-              </Paper>
-            </Grid>
+                Ihre Kontaktdaten
+              </Typography>
+              <CheckoutForm cartItems={cartItems} />
+            </Paper>
           </Grid>
-        )}
+        </Grid>
       </Box>
-
-      <Snackbar
-        open={showSuccess}
-        autoHideDuration={2000}
-        onClose={() => setShowSuccess(false)}
-        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-      >
-        <Alert severity="success" sx={{ width: '100%' }}>
-          Buchung erfolgreich! Du wirst weitergeleitet...
-        </Alert>
-      </Snackbar>
-
-      <Snackbar
-        open={!!error}
-        autoHideDuration={6000}
-        onClose={() => setError(null)}
-        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-      >
-        <Alert severity="error" sx={{ width: '100%' }}>
-          {error}
-        </Alert>
-      </Snackbar>
     </Container>
   );
 } 

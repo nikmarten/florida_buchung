@@ -4,7 +4,6 @@ import {
   Toolbar, 
   Typography, 
   IconButton, 
-  Badge,
   Box,
   Container,
   Menu,
@@ -13,18 +12,19 @@ import {
   Tooltip,
   useTheme as useMuiTheme,
   Switch,
-  styled
+  styled,
+  Badge
 } from '@mui/material';
 import { 
-  ShoppingCart as ShoppingCartIcon,
   Menu as MenuIcon,
   Home as HomeIcon,
-  AdminPanelSettings as AdminIcon
+  AdminPanelSettings as AdminIcon,
+  ShoppingCart as CartIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import { useSelector } from 'react-redux';
-import CartDrawer from './CartDrawer';
 import { useTheme as useCustomTheme } from '../context/ThemeContext';
+import { useSelector } from 'react-redux';
+import Cart from './Cart';
 
 // Styled Switch Component
 const ThemeSwitch = styled(Switch)(({ theme }) => ({
@@ -78,10 +78,10 @@ export default function Navbar() {
   const navigate = useNavigate();
   const muiTheme = useMuiTheme();
   const isMobile = useMediaQuery(muiTheme.breakpoints.down('sm'));
-  const [cartOpen, setCartOpen] = React.useState(false);
   const [anchorEl, setAnchorEl] = React.useState(null);
-  const cartItems = useSelector((state) => state.cart.items);
   const { mode, toggleMode } = useCustomTheme();
+  const cartItems = useSelector((state) => state.cart.items);
+  const [isCartOpen, setIsCartOpen] = React.useState(false);
 
   const handleMenuOpen = (event) => {
     setAnchorEl(event.currentTarget);
@@ -94,6 +94,14 @@ export default function Navbar() {
   const handleNavigation = (path) => {
     navigate(path);
     handleMenuClose();
+  };
+
+  const handleCartOpen = () => {
+    setIsCartOpen(true);
+  };
+
+  const handleCartClose = () => {
+    setIsCartOpen(false);
   };
 
   return (
@@ -116,15 +124,17 @@ export default function Navbar() {
 
             {isMobile ? (
               <Box sx={{ display: 'flex', gap: 1 }}>
-                <IconButton 
-                  color="inherit" 
-                  onClick={() => setCartOpen(true)}
-                  size="large"
-                >
-                  <Badge badgeContent={cartItems.length} color="error">
-                    <ShoppingCartIcon />
-                  </Badge>
-                </IconButton>
+                <Tooltip title="Warenkorb">
+                  <IconButton
+                    color="inherit"
+                    onClick={handleCartOpen}
+                    size="large"
+                  >
+                    <Badge badgeContent={cartItems.length} color="error">
+                      <CartIcon />
+                    </Badge>
+                  </IconButton>
+                </Tooltip>
                 <IconButton
                   color="inherit"
                   onClick={handleMenuOpen}
@@ -149,6 +159,12 @@ export default function Navbar() {
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <HomeIcon />
                       Ausrüstung buchen
+                    </Box>
+                  </MenuItem>
+                  <MenuItem onClick={handleCartOpen}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <CartIcon />
+                      Warenkorb ({cartItems.length})
                     </Box>
                   </MenuItem>
                   <MenuItem onClick={() => handleNavigation('/admin')}>
@@ -184,6 +200,17 @@ export default function Navbar() {
                     <HomeIcon />
                   </IconButton>
                 </Tooltip>
+                <Tooltip title="Warenkorb">
+                  <IconButton 
+                    color="inherit"
+                    onClick={handleCartOpen}
+                    size="large"
+                  >
+                    <Badge badgeContent={cartItems.length} color="error">
+                      <CartIcon />
+                    </Badge>
+                  </IconButton>
+                </Tooltip>
                 <Tooltip title="Admin-Bereich">
                   <IconButton 
                     color="inherit"
@@ -199,21 +226,12 @@ export default function Navbar() {
                     onChange={toggleMode}
                   />
                 </Tooltip>
-                <IconButton 
-                  color="inherit" 
-                  onClick={() => setCartOpen(true)}
-                  size="large"
-                >
-                  <Badge badgeContent={cartItems.length} color="error">
-                    <ShoppingCartIcon />
-                  </Badge>
-                </IconButton>
               </Box>
             )}
           </Toolbar>
         </Container>
       </AppBar>
-      <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} />
+      <Cart open={isCartOpen} onClose={handleCartClose} />
     </>
   );
 } 

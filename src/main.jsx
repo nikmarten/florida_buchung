@@ -26,14 +26,14 @@ function ThemedApp() {
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <Provider store={store}>
-      <ThemeProvider>
-        <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={de}>
-          <BrowserRouter>
+    <BrowserRouter>
+      <Provider store={store}>
+        <ThemeProvider>
+          <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={de}>
             <ThemedApp />
-          </BrowserRouter>
-        </LocalizationProvider>
-      </ThemeProvider>
-    </Provider>
+          </LocalizationProvider>
+        </ThemeProvider>
+      </Provider>
+    </BrowserRouter>
   </React.StrictMode>
 );
