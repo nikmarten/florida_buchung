@@ -33,10 +33,7 @@ lerna-debug.log*
 *.swo
 
 # Docker
-Dockerfile*
-docker-compose*
-.docker
-docker-volumes/
+
 
 # MongoDB data
 mongodb_data/
