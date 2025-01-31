@@ -23,9 +23,14 @@ export default defineConfig({
     minify: 'terser',
     cssCodeSplit: false,
     commonjsOptions: {
-      include: [/node_modules/],
+      include: [
+        /node_modules/,
+        /date-fns/,
+        /date-fns\/.*/
+      ],
       transformMixedEsModules: true,
-      requireReturnsDefault: 'auto'
+      requireReturnsDefault: 'auto',
+      defaultIsModuleExports: true
     },
     rollupOptions: {
       output: {
@@ -38,16 +43,18 @@ export default defineConfig({
             '@mui/x-date-pickers',
             '@emotion/react',
             '@emotion/styled'
-          ]
+          ],
+          'date-fns': ['date-fns']
         }
       }
     }
   },
   resolve: {
-    mainFields: ['browser', 'module', 'main'],
+    mainFields: ['browser', 'module', 'main', 'jsnext:main'],
     extensions: ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json'],
     alias: {
-      '@mui/system': '@mui/system/esm'
+      '@mui/system': '@mui/system/esm',
+      'date-fns': 'date-fns/esm'
     }
   },
   optimizeDeps: {
@@ -62,14 +69,16 @@ export default defineConfig({
       '@mui/x-date-pickers',
       '@emotion/react',
       '@emotion/styled',
-      'date-fns'
+      'date-fns',
+      'date-fns/locale'
     ],
     esbuildOptions: {
       target: 'es2015',
       supported: {
         'top-level-await': true
       },
-      jsx: 'automatic'
+      jsx: 'automatic',
+      platform: 'browser'
     }
   }
 })
