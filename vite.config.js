@@ -3,19 +3,13 @@ import react from '@vitejs/plugin-react'
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react({
-    // Add better error overlay
-    jsxRuntime: 'automatic',
-    fastRefresh: true,
-    include: '**/*.{jsx,tsx,js,ts}',
-  })],
+  plugins: [react()],
   server: {
     port: 3000,
     proxy: {
       '/api': {
         target: 'http://localhost:5001',
         changeOrigin: true,
-        secure: false
       }
     }
   },
@@ -26,8 +20,21 @@ export default defineConfig({
   },
   build: {
     target: 'es2015',
-    minify: false, // Disable minification for better debugging
-    sourcemap: 'inline',
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: false,
+        pure_funcs: ['console.info', 'console.debug', 'console.trace'],
+      },
+      format: {
+        comments: false,
+        keep_quoted_props: true,
+        keep_numbers: true,
+        keep_classnames: true,
+        keep_fnames: true,
+      },
+    },
+    sourcemap: true,
     cssCodeSplit: false,
     commonjsOptions: {
       include: [
@@ -42,13 +49,11 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          'vendor': ['react', 'react-dom'],
-          'router': ['react-router-dom'],
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          'mui-vendor': ['@mui/material', '@mui/icons-material'],
           'redux': ['react-redux', '@reduxjs/toolkit'],
           'mui': [
-            '@mui/material',
             '@mui/system',
-            '@mui/icons-material',
             '@mui/x-date-pickers',
             '@emotion/react',
             '@emotion/styled'

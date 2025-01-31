@@ -3,17 +3,27 @@ FROM node:18-alpine as build
 
 WORKDIR /app
 
+# Install build dependencies
+RUN apk add --no-cache python3 make g++
+
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm install
+# Clean install dependencies
+RUN npm cache clean --force && \
+    rm -rf node_modules && \
+    npm install --legacy-peer-deps
 
-# Copy the rest of the application
+# Copy source code
 COPY . .
 
-# Build the application
-RUN npm run build
+# Create production build with increased memory
+ENV NODE_OPTIONS="--max-old-space-size=4096"
+ENV NODE_ENV=production
+ENV VITE_USER_NODE_ENV=production
+
+# Build the application with specific Vite config
+RUN npm run build -- --mode production
 
 # Production stage
 FROM nginx:alpine
