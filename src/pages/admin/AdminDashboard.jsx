@@ -21,6 +21,7 @@ import DashboardIcon from '@mui/icons-material/Dashboard';
 import InventoryIcon from '@mui/icons-material/Inventory';
 import CategoryIcon from '@mui/icons-material/Category';
 import BookingsIcon from '@mui/icons-material/BookOnline';
+import LogoutIcon from '@mui/icons-material/Logout';
 import AdminProducts from '../../components/admin/AdminProducts';
 import AdminCategories from '../../components/admin/AdminCategories';
 import AdminBookingsPage from '../../pages/AdminBookingsPage';
@@ -132,8 +133,38 @@ export default function AdminDashboard() {
 
       <Divider sx={{ mx: 2 }} />
       
-      <Box sx={{ p: 2, textAlign: 'center' }}>
-        <Typography variant="caption" color="text.secondary">
+      <Box sx={{ p: 2 }}>
+        <ListItemButton
+          onClick={() => {
+            localStorage.removeItem('adminAuthenticated');
+            navigate('/booking');
+          }}
+          sx={{
+            borderRadius: 2,
+            mb: 2,
+            color: theme.palette.error.main,
+            '&:hover': {
+              backgroundColor: theme.palette.error.main,
+              color: '#fff'
+            }
+          }}
+        >
+          <ListItemIcon sx={{ 
+            minWidth: 40,
+            color: 'inherit'
+          }}>
+            <LogoutIcon />
+          </ListItemIcon>
+          <ListItemText 
+            primary="Abmelden"
+            primaryTypographyProps={{
+              fontSize: '0.95rem',
+              fontWeight: 500
+            }}
+          />
+        </ListItemButton>
+
+        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'center' }}>
           © 2024 Florida Technik
         </Typography>
       </Box>

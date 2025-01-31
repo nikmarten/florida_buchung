@@ -64,36 +64,62 @@ productSchema.methods.checkAvailability = async function(startDate, endDate, req
     'items.startDate': { $lte: extendedEndDate },
     'items.endDate': { $gte: startDate },
     status: { $nin: ['cancelled', 'completed'] }
-  });
+  }).populate('items.product');
 
-  console.log('Found overlapping bookings:', overlappingBookings);
+  // Sammle Informationen über die Buchungen
+  const bookingInfo = overlappingBookings.map(booking => ({
+    customerName: booking.customerName,
+    startDate: booking.items.find(i => i.product._id.toString() === this._id.toString())?.startDate,
+    endDate: booking.items.find(i => i.product._id.toString() === this._id.toString())?.endDate,
+    quantity: booking.items.find(i => i.product._id.toString() === this._id.toString())?.quantity
+  })).filter(info => info.quantity);
 
   // Berechne gebuchte Menge im Zeitraum
-  let bookedQuantity = 0;
+  let totalBookedQuantity = 0;
+  
   overlappingBookings.forEach(booking => {
+    // Überspringe stornierte oder abgeschlossene Buchungen
+    if (booking.status === 'cancelled' || booking.status === 'completed') {
+      console.log(`Skipping booking ${booking._id} with status ${booking.status}`);
+      return;
+    }
+
     booking.items.forEach(item => {
-      if (item.product.equals(this._id)) {
-        console.log(`Adding ${item.quantity} from booking ${booking._id}`);
-        bookedQuantity += item.quantity;
+      if (item.product._id.toString() !== this._id.toString()) {
+        console.log(`Skipping item with different product ID: ${item.product._id}`);
+        return;
       }
+      
+      console.log(`Processing booking ${booking._id}:`, {
+        status: booking.status,
+        quantity: item.quantity,
+        startDate: item.startDate,
+        endDate: item.endDate
+      });
+      
+      totalBookedQuantity += item.quantity;
+      console.log(`Added ${item.quantity}, total now: ${totalBookedQuantity}`);
     });
   });
 
-  const remainingQuantity = this.quantity - bookedQuantity;
+  const remainingQuantity = this.quantity - totalBookedQuantity;
   const isAvailable = remainingQuantity >= requestedQuantity && this.isActive;
 
-  console.log('Availability result:', {
-    bookedQuantity,
+  console.log('Final availability calculation:', {
+    productQuantity: this.quantity,
+    totalBookedQuantity,
     remainingQuantity,
+    requestedQuantity,
     isAvailable
   });
 
   return {
     isAvailable,
     totalQuantity: this.quantity,
-    bookedQuantity,
+    bookedQuantity: totalBookedQuantity,
     remainingQuantity,
-    requestedQuantity
+    requestedQuantity,
+    bookingInfo
   };
 };
 

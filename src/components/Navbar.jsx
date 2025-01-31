@@ -19,7 +19,8 @@ import {
   Menu as MenuIcon,
   Home as HomeIcon,
   AdminPanelSettings as AdminIcon,
-  ShoppingCart as CartIcon
+  ShoppingCart as CartIcon,
+  Logout as LogoutIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useTheme as useCustomTheme } from '../context/ThemeContext';
@@ -117,7 +118,7 @@ export default function Navbar() {
                 cursor: 'pointer',
                 fontWeight: 500
               }}
-              onClick={() => navigate('/')}
+              onClick={() => navigate('/booking')}
             >
               Florida Technik
             </Typography>
@@ -155,7 +156,7 @@ export default function Navbar() {
                     horizontal: 'right',
                   }}
                 >
-                  <MenuItem onClick={() => handleNavigation('/')}>
+                  <MenuItem onClick={() => handleNavigation('/booking')}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <HomeIcon />
                       Ausrüstung buchen
@@ -194,7 +195,7 @@ export default function Navbar() {
                 <Tooltip title="Ausrüstung buchen">
                   <IconButton 
                     color="inherit"
-                    onClick={() => navigate('/')}
+                    onClick={() => navigate('/booking')}
                     size="large"
                   >
                     <HomeIcon />

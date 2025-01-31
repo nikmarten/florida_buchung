@@ -26,8 +26,10 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
 import ReturnDialog from './ReturnDialog';
+import EditBookingDialog from './EditBookingDialog';
 import { useDispatch } from 'react-redux';
-import { updateBookingReturn } from '../store/bookingSlice';
+import { updateBookingReturn, fetchBookings } from '../store/bookingSlice';
+import api from '../services/api';
 
 const statusColors = {
   pending: 'warning',
@@ -60,6 +62,7 @@ const returnStatusLabels = {
 const Row = ({ booking }) => {
   const [open, setOpen] = useState(false);
   const [returnDialogOpen, setReturnDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const dispatch = useDispatch();
 
   const handleReturnSave = async (returnItems) => {
@@ -67,6 +70,34 @@ const Row = ({ booking }) => {
       bookingId: booking._id,
       items: returnItems
     }));
+  };
+
+  const handleCancel = async () => {
+    if (window.confirm('Möchten Sie diese Buchung wirklich stornieren?')) {
+      try {
+        const response = await api.put(`/bookings/${booking._id}/cancel`);
+        if (response.status === 200) {
+          dispatch(fetchBookings());
+        }
+      } catch (error) {
+        alert(error.response?.data?.message || 'Fehler beim Stornieren der Buchung');
+      }
+    }
+  };
+
+  const handleEditSave = async (editedBooking) => {
+    try {
+      const response = await api.put(`/bookings/${booking._id}`, {
+        status: editedBooking.status,
+        items: editedBooking.items
+      });
+      
+      if (response.status === 200) {
+        dispatch(fetchBookings());
+      }
+    } catch (error) {
+      alert(error.response?.data?.message || 'Fehler beim Aktualisieren der Buchung');
+    }
   };
 
   const allItemsReturned = booking.items.every(
@@ -108,28 +139,40 @@ const Row = ({ booking }) => {
         <TableCell>
           <Box sx={{ display: 'flex', gap: 1 }}>
             <Tooltip title="Rückgabe">
-              <IconButton 
-                size="small"
-                onClick={() => setReturnDialogOpen(true)}
-                disabled={booking.status === 'completed' || booking.status === 'cancelled'}
-                color={allItemsReturned ? 'success' : 'default'}
-              >
-                <AssignmentReturnIcon />
-              </IconButton>
+              <span>
+                <IconButton 
+                  size="small"
+                  onClick={() => setReturnDialogOpen(true)}
+                  disabled={booking.status === 'completed' || booking.status === 'cancelled'}
+                  color={allItemsReturned ? 'success' : 'default'}
+                >
+                  <AssignmentReturnIcon />
+                </IconButton>
+              </span>
             </Tooltip>
             <Tooltip title="Bearbeiten">
-              <IconButton size="small" color="primary">
-                <EditIcon />
-              </IconButton>
+              <span>
+                <IconButton 
+                  size="small" 
+                  color="primary"
+                  onClick={() => setEditDialogOpen(true)}
+                  disabled={booking.status === 'completed' || booking.status === 'cancelled'}
+                >
+                  <EditIcon />
+                </IconButton>
+              </span>
             </Tooltip>
             <Tooltip title="Stornieren">
-              <IconButton 
-                size="small" 
-                color="error"
-                disabled={booking.status === 'completed' || booking.status === 'cancelled'}
-              >
-                <CancelIcon />
-              </IconButton>
+              <span>
+                <IconButton 
+                  size="small" 
+                  color="error"
+                  onClick={handleCancel}
+                  disabled={booking.status === 'completed' || booking.status === 'cancelled'}
+                >
+                  <CancelIcon />
+                </IconButton>
+              </span>
             </Tooltip>
           </Box>
         </TableCell>
@@ -190,6 +233,13 @@ const Row = ({ booking }) => {
         </TableCell>
       </TableRow>
 
+      <EditBookingDialog
+        open={editDialogOpen}
+        onClose={() => setEditDialogOpen(false)}
+        booking={booking}
+        onSave={handleEditSave}
+      />
+      
       <ReturnDialog
         open={returnDialogOpen}
         onClose={() => setReturnDialogOpen(false)}

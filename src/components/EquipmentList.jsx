@@ -5,7 +5,8 @@ import { addToCart } from '../store/cartSlice';
 import { fetchProducts } from '../store/productSlice';
 import { fetchCategories } from '../store/categorySlice';
 import { fetchBookings } from '../store/bookingSlice';
-import { parseISO, isWithinInterval, isSameDay } from 'date-fns';
+import { parseISO, isWithinInterval, isSameDay, format } from 'date-fns';
+import { de } from 'date-fns/locale';
 
 export default function EquipmentList() {
   const dispatch = useDispatch();
@@ -45,7 +46,7 @@ export default function EquipmentList() {
   const handleQuantityChange = (equipmentId, value) => {
     const numValue = parseInt(value);
     const equipment = products.find(p => p._id === equipmentId);
-    if (equipment && numValue > 0 && numValue <= equipment.quantity) {
+    if (equipment && numValue > 0 && isProductAvailable(equipmentId, numValue)) {
       setQuantities(prev => ({
         ...prev,
         [equipmentId]: numValue
@@ -53,31 +54,94 @@ export default function EquipmentList() {
     }
   };
 
-  // Prüfe, ob ein Produkt im gewünschten Zeitraum verfügbar ist
-  const isProductAvailable = (productId) => {
+  const isProductAvailable = (productId, requestedQuantity = 1) => {
     if (!startDate || !endDate || !bookings) return true;
 
-    const desiredStart = new Date(startDate);
-    const desiredEnd = new Date(endDate);
+    const product = products.find(p => p._id === productId);
+    if (!product) return false;
 
-    const conflictingBooking = bookings.find(booking =>
-      booking.items.some(item => {
-        if (item.productId?._id !== productId) return false;
-        
-        const bookedStart = new Date(item.startDate);
-        const bookedEnd = new Date(item.endDate);
-
-        return (
-          isWithinInterval(desiredStart, { start: bookedStart, end: bookedEnd }) ||
-          isWithinInterval(desiredEnd, { start: bookedStart, end: bookedEnd }) ||
-          isWithinInterval(bookedStart, { start: desiredStart, end: desiredEnd }) ||
-          isSameDay(desiredStart, bookedStart) ||
-          isSameDay(desiredEnd, bookedEnd)
-        );
-      })
+    // Finde alle relevanten Buchungen für dieses Produkt
+    const relevantBookings = bookings.filter(booking => 
+      booking.status !== 'cancelled' && 
+      booking.status !== 'completed' &&
+      booking.items.some(item => item.product._id === productId)
     );
 
-    return !conflictingBooking;
+    let totalBookedQuantity = 0;
+
+    // Prüfe jede Buchung auf Überschneidung
+    relevantBookings.forEach(booking => {
+      booking.items.forEach(item => {
+        if (item.product._id === productId) {
+          const bookedStart = new Date(item.startDate);
+          const bookedEnd = new Date(item.endDate);
+          const desiredStart = new Date(startDate);
+          const desiredEnd = new Date(endDate);
+
+          // Wenn sich die Zeiträume überschneiden
+          if (
+            isWithinInterval(desiredStart, { start: bookedStart, end: bookedEnd }) ||
+            isWithinInterval(desiredEnd, { start: bookedStart, end: bookedEnd }) ||
+            isWithinInterval(bookedStart, { start: desiredStart, end: desiredEnd }) ||
+            isSameDay(desiredStart, bookedStart) ||
+            isSameDay(desiredEnd, bookedEnd)
+          ) {
+            totalBookedQuantity += item.quantity;
+          }
+        }
+      });
+    });
+
+    // Prüfe ob genügend Produkte verfügbar sind
+    return (product.quantity - totalBookedQuantity) >= requestedQuantity;
+  };
+
+  const getAvailabilityInfo = (equipment) => {
+    if (!startDate || !endDate) return null;
+
+    // Finde alle relevanten Buchungen für dieses Produkt
+    const relevantBookings = bookings.filter(booking => 
+      booking.status !== 'cancelled' && 
+      booking.status !== 'completed' &&
+      booking.items.some(item => item.product._id === equipment._id)
+    );
+
+    let totalBookedQuantity = 0;
+    const bookingInfo = [];
+
+    // Prüfe jede Buchung auf Überschneidung
+    relevantBookings.forEach(booking => {
+      booking.items.forEach(item => {
+        if (item.product._id === equipment._id) {
+          const bookedStart = new Date(item.startDate);
+          const bookedEnd = new Date(item.endDate);
+          const desiredStart = new Date(startDate);
+          const desiredEnd = new Date(endDate);
+
+          if (
+            isWithinInterval(desiredStart, { start: bookedStart, end: bookedEnd }) ||
+            isWithinInterval(desiredEnd, { start: bookedStart, end: bookedEnd }) ||
+            isWithinInterval(bookedStart, { start: desiredStart, end: desiredEnd }) ||
+            isSameDay(desiredStart, bookedStart) ||
+            isSameDay(desiredEnd, bookedEnd)
+          ) {
+            totalBookedQuantity += item.quantity;
+            bookingInfo.push({
+              customerName: booking.customerName,
+              quantity: item.quantity,
+              startDate: item.startDate,
+              endDate: item.endDate
+            });
+          }
+        }
+      });
+    });
+
+    return {
+      isAvailable: (equipment.quantity - totalBookedQuantity) >= 1,
+      remainingQuantity: equipment.quantity - totalBookedQuantity,
+      bookingInfo
+    };
   };
 
   // Filtere und sortiere die Produkte
@@ -166,11 +230,14 @@ export default function EquipmentList() {
       {filteredAndSortedProducts?.length === 0 ? (
         <Alert severity="info">Keine Produkte gefunden.</Alert>
       ) : (
-        <Grid container spacing={3}>
+        <Grid container spacing={2}>
           {filteredAndSortedProducts?.map((equipment) => {
-            const available = isProductAvailable(equipment._id);
+            const availabilityInfo = getAvailabilityInfo(equipment);
+            const available = availabilityInfo?.isAvailable ?? true;
+            const availableQuantity = availabilityInfo?.remainingQuantity ?? equipment.quantity;
+
             return (
-              <Grid item key={equipment._id} xs={12} sm={6} md={4}>
+              <Grid item key={equipment._id} xs={12} sm={6} md={3}>
                 <Card 
                   sx={{ 
                     height: '100%', 
@@ -184,27 +251,39 @@ export default function EquipmentList() {
                 >
                   <CardMedia
                     component="img"
-                    height="200"
+                    height="160"
                     image={equipment.imageUrl || 'https://via.placeholder.com/200'}
                     alt={equipment.name}
                   />
-                  <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-                    <Typography gutterBottom variant="h6" component="h2">
+                  <CardContent sx={{ 
+                    flexGrow: 1, 
+                    display: 'flex', 
+                    flexDirection: 'column',
+                    p: 2
+                  }}>
+                    <Typography gutterBottom variant="h6" component="h2" sx={{ fontSize: '1.1rem' }}>
                       {equipment.name}
                     </Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5, fontSize: '0.875rem' }}>
                       {equipment.description}
                     </Typography>
                     
                     {isTimeRangeSelected && (
-                      <Box sx={{ mb: 2 }}>
+                      <Box sx={{ mb: 1.5 }}>
                         {available ? (
-                          <Alert severity="success" icon={false}>
+                          <Alert severity="success" icon={false} sx={{ py: 0.5 }}>
                             Im gewählten Zeitraum verfügbar
                           </Alert>
                         ) : (
-                          <Alert severity="error" icon={false}>
+                          <Alert severity="error" icon={false} sx={{ py: 0.5 }}>
                             Im gewählten Zeitraum nicht verfügbar
+                            {availabilityInfo?.bookingInfo?.map((info, index) => (
+                              <Typography key={index} variant="body2" sx={{ mt: 0.5, fontSize: '0.8rem' }}>
+                                Gebucht von: {info.customerName} ({info.quantity} Stück)
+                                <br />
+                                {format(new Date(info.startDate), 'dd.MM.yyyy', { locale: de })} - {format(new Date(info.endDate), 'dd.MM.yyyy', { locale: de })}
+                              </Typography>
+                            ))}
                           </Alert>
                         )}
                       </Box>
@@ -218,14 +297,17 @@ export default function EquipmentList() {
                           type="number"
                           value={quantities[equipment._id] || 1}
                           onChange={(e) => handleQuantityChange(equipment._id, e.target.value)}
-                          sx={{ mb: 2 }}
+                          sx={{ mb: 1.5 }}
+                          size="small"
                           InputProps={{
                             inputProps: { 
                               min: 1, 
-                              max: equipment.quantity 
+                              max: availableQuantity 
                             }
                           }}
-                          helperText={`Maximal verfügbar: ${equipment.quantity} Stück`}
+                          helperText={isTimeRangeSelected 
+                            ? `Verfügbar im gewählten Zeitraum: ${availableQuantity} Stück`
+                            : 'Bitte wählen Sie zuerst einen Zeitraum'}
                         />
                       )}
                       <Button
@@ -234,6 +316,7 @@ export default function EquipmentList() {
                         color="primary"
                         onClick={() => handleAddToCart(equipment)}
                         disabled={!isTimeRangeSelected || !available}
+                        size="small"
                       >
                         {!isTimeRangeSelected 
                           ? "Zeitraum auswählen"
