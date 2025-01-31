@@ -25,13 +25,13 @@ export default defineConfig({
     },
     rollupOptions: {
       output: {
-        manualChunks: (id) => {
-          if (id.includes('@mui')) {
-            return 'mui';
-          }
-          if (id.includes('react') || id.includes('date-fns')) {
-            return 'vendor';
-          }
+        manualChunks: {
+          'mui-core': ['@mui/material', '@mui/system'],
+          'mui-icons': ['@mui/icons-material'],
+          'mui-pickers': ['@mui/x-date-pickers'],
+          'mui-deps': ['@emotion/react', '@emotion/styled'],
+          'date-utils': ['date-fns', '@date-io/date-fns'],
+          'react-core': ['react', 'react-dom', 'react-router-dom']
         }
       }
     }
