@@ -24,13 +24,21 @@ export default defineConfig({
       transformMixedEsModules: true
     },
     rollupOptions: {
-      external: ['@mui/system'],
       output: {
-        manualChunks: {
-          'mui': ['@mui/material', '@mui/icons-material', '@mui/system', '@mui/x-date-pickers'],
-          'vendor': ['react', 'react-dom', 'date-fns']
+        manualChunks: (id) => {
+          if (id.includes('@mui')) {
+            return 'mui';
+          }
+          if (id.includes('react') || id.includes('date-fns')) {
+            return 'vendor';
+          }
         }
       }
+    }
+  },
+  resolve: {
+    alias: {
+      '@mui/system': '@mui/system/esm'
     }
   },
   optimizeDeps: {
@@ -43,6 +51,9 @@ export default defineConfig({
       '@mui/x-date-pickers',
       '@emotion/react',
       '@emotion/styled'
-    ]
+    ],
+    esbuildOptions: {
+      target: 'es2020'
+    }
   }
 })
