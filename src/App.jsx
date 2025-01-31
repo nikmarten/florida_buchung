@@ -1,8 +1,5 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
-import { LocalizationProvider } from '@mui/x-date-pickers';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { de } from 'date-fns/locale';
 
 // Pages
 import Home from './pages/Home';
@@ -16,7 +13,7 @@ import AdminRoute from './components/AdminRoute';
 
 function App() {
   return (
-    <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={de}>
+    <>
       <Navbar />
       <Routes>
         <Route path="/" element={<Home />} />
@@ -30,7 +27,7 @@ function App() {
           </AdminRoute>
         } />
       </Routes>
-    </LocalizationProvider>
+    </>
   );
 }
 
