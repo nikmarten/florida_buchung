@@ -22,9 +22,27 @@ export default defineConfig({
     commonjsOptions: {
       include: [/node_modules/],
       transformMixedEsModules: true
+    },
+    rollupOptions: {
+      external: ['@mui/system'],
+      output: {
+        manualChunks: {
+          'mui': ['@mui/material', '@mui/icons-material', '@mui/system', '@mui/x-date-pickers'],
+          'vendor': ['react', 'react-dom', 'date-fns']
+        }
+      }
     }
   },
   optimizeDeps: {
-    include: ['date-fns', '@date-io/date-fns']
+    include: [
+      'date-fns',
+      '@date-io/date-fns',
+      '@mui/material',
+      '@mui/icons-material',
+      '@mui/system',
+      '@mui/x-date-pickers',
+      '@emotion/react',
+      '@emotion/styled'
+    ]
   }
 })
