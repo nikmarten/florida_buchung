@@ -3,7 +3,12 @@ import react from '@vitejs/plugin-react'
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react({
+    // Add better error overlay
+    jsxRuntime: 'automatic',
+    fastRefresh: true,
+    include: '**/*.{jsx,tsx,js,ts}',
+  })],
   server: {
     port: 3000,
     proxy: {
@@ -16,7 +21,8 @@ export default defineConfig({
   },
   envDir: './', // Explizit das Verzeichnis für Env-Dateien angeben
   define: {
-    'process.env.VITE_API_URL': JSON.stringify(process.env.VITE_API_URL)
+    'process.env.VITE_API_URL': JSON.stringify(process.env.VITE_API_URL),
+    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV)
   },
   build: {
     target: 'es2015',
@@ -84,7 +90,9 @@ export default defineConfig({
       },
       jsx: 'automatic',
       platform: 'browser',
-      keepNames: true
+      keepNames: true,
+      sourcemap: true,
+      sourcesContent: true
     }
   }
 })
