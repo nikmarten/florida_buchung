@@ -3,13 +3,7 @@ import react from '@vitejs/plugin-react'
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react({
-    jsxRuntime: 'automatic',
-    jsxImportSource: '@emotion/react',
-    babel: {
-      plugins: ['@emotion/babel-plugin']
-    }
-  })],
+  plugins: [react()],
   server: {
     port: 3000,
     proxy: {
@@ -25,17 +19,23 @@ export default defineConfig({
     'process.env.VITE_API_URL': JSON.stringify(process.env.VITE_API_URL)
   },
   build: {
-    commonjsOptions: {
-      include: [/node_modules/],
-      transformMixedEsModules: true
-    },
+    target: 'es2015',
+    minify: 'terser',
+    cssCodeSplit: false,
     rollupOptions: {
       output: {
         manualChunks: {
           'vendor': ['react', 'react-dom', 'react-router-dom'],
-          'mui-base': ['@mui/material', '@mui/system', '@emotion/react', '@emotion/styled'],
-          'mui-icons': ['@mui/icons-material'],
-          'mui-pickers': ['@mui/x-date-pickers', 'date-fns', '@date-io/date-fns']
+          'mui': [
+            '@mui/material',
+            '@mui/system',
+            '@mui/icons-material',
+            '@mui/x-date-pickers',
+            '@emotion/react',
+            '@emotion/styled',
+            'date-fns',
+            '@date-io/date-fns'
+          ]
         }
       }
     }
@@ -58,9 +58,6 @@ export default defineConfig({
       '@emotion/styled',
       'date-fns',
       '@date-io/date-fns'
-    ],
-    esbuildOptions: {
-      target: 'es2020'
-    }
+    ]
   }
 })

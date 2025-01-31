@@ -6,15 +6,16 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
+# Install dependencies with clean npm cache
 RUN npm cache clean --force && \
-    npm install --legacy-peer-deps
+    npm install --legacy-peer-deps --force
 
 # Copy source code
 COPY . .
 
 # Create production build with increased memory
 ENV NODE_OPTIONS="--max-old-space-size=4096"
+ENV NODE_ENV=production
 RUN npm run build
 
 # Serve stage
