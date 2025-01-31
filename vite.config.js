@@ -22,6 +22,10 @@ export default defineConfig({
     target: 'es2015',
     minify: 'terser',
     cssCodeSplit: false,
+    commonjsOptions: {
+      include: [/date-fns/],
+      transformMixedEsModules: true
+    },
     rollupOptions: {
       output: {
         manualChunks: {
@@ -58,8 +62,7 @@ export default defineConfig({
     ],
     esbuildOptions: {
       mainFields: ['module', 'main'],
-      resolveExtensions: ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json'],
-      format: 'esm'
+      resolveExtensions: ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json']
     }
   }
 })

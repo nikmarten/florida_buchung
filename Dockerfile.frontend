@@ -6,9 +6,11 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies with clean npm cache
+# Install dependencies with clean npm cache and specific date-fns version
 RUN npm cache clean --force && \
-    npm install --legacy-peer-deps --force
+    npm install --legacy-peer-deps --force && \
+    npm uninstall date-fns && \
+    npm install date-fns@2.29.3 --save --legacy-peer-deps
 
 # Copy source code
 COPY . .
