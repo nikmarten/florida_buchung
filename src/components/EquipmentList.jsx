@@ -145,10 +145,12 @@ export default function EquipmentList() {
   };
 
   // Filtere und sortiere die Produkte
-  const filteredAndSortedProducts = [...products]
+  const filteredAndSortedProducts = [...(products || [])]
     .filter(product => {
-      const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          product.description.toLowerCase().includes(searchTerm.toLowerCase());
+      if (!product || !product.name || !product.description) return false;
+      
+      const matchesSearch = product.name.toLowerCase().includes((searchTerm || '').toLowerCase()) ||
+                          product.description.toLowerCase().includes((searchTerm || '').toLowerCase());
       const matchesCategory = selectedCategory === 'ALL' || 
                             (product.category && product.category._id === selectedCategory);
       return matchesSearch && matchesCategory;
