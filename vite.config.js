@@ -21,7 +21,21 @@ export default defineConfig({
   build: {
     target: 'es2015',
     minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: false,
+        pure_funcs: ['console.debug']
+      },
+      format: {
+        comments: false
+      },
+      mangle: {
+        keep_fnames: true,
+        keep_classnames: true
+      }
+    },
     cssCodeSplit: false,
+    sourcemap: true,
     commonjsOptions: {
       include: [
         /node_modules/,
@@ -35,7 +49,9 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          'vendor': ['react', 'react-dom', 'react-router-dom', 'react-redux'],
+          'vendor': ['react', 'react-dom'],
+          'router': ['react-router-dom'],
+          'redux': ['react-redux', '@reduxjs/toolkit'],
           'mui': [
             '@mui/material',
             '@mui/system',
@@ -45,7 +61,8 @@ export default defineConfig({
             '@emotion/styled'
           ],
           'date-fns': ['date-fns']
-        }
+        },
+        inlineDynamicImports: false
       }
     }
   },
@@ -63,6 +80,7 @@ export default defineConfig({
       'react-dom',
       'react-router-dom',
       'react-redux',
+      '@reduxjs/toolkit',
       '@mui/material',
       '@mui/icons-material',
       '@mui/system',
