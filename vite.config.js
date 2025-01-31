@@ -3,7 +3,17 @@ import react from '@vitejs/plugin-react'
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react({
+      jsxRuntime: 'automatic',
+      jsxImportSource: 'react',
+      babel: {
+        plugins: [
+          ['@babel/plugin-transform-react-jsx', { runtime: 'automatic' }]
+        ]
+      }
+    })
+  ],
   server: {
     port: 3000,
     proxy: {
@@ -23,13 +33,14 @@ export default defineConfig({
     minify: 'terser',
     cssCodeSplit: false,
     commonjsOptions: {
-      include: [/date-fns/],
+      include: [/node_modules/],
       transformMixedEsModules: true
     },
     rollupOptions: {
+      external: ['react/jsx-runtime'],
       output: {
         manualChunks: {
-          'vendor': ['react', 'react-dom', 'react-router-dom'],
+          'vendor': ['react', 'react-dom', 'react-router-dom', 'react-redux'],
           'mui': [
             '@mui/material',
             '@mui/system',
@@ -44,6 +55,10 @@ export default defineConfig({
   },
   resolve: {
     alias: {
+      'react/jsx-runtime': 'react/jsx-runtime.js',
+      'react/jsx-dev-runtime': 'react/jsx-dev-runtime.js',
+      'react': 'react/index.js',
+      'react-dom': 'react-dom/index.js',
       '@mui/system': '@mui/system/esm'
     }
   },
@@ -52,6 +67,7 @@ export default defineConfig({
       'react',
       'react-dom',
       'react-router-dom',
+      'react-redux',
       '@mui/material',
       '@mui/icons-material',
       '@mui/system',
@@ -62,7 +78,8 @@ export default defineConfig({
     ],
     esbuildOptions: {
       mainFields: ['module', 'main'],
-      resolveExtensions: ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json']
+      resolveExtensions: ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json'],
+      jsx: 'automatic'
     }
   }
 })
