@@ -20,22 +20,9 @@ export default defineConfig({
   },
   build: {
     target: 'es2015',
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: false,
-        pure_funcs: ['console.debug']
-      },
-      format: {
-        comments: false
-      },
-      mangle: {
-        keep_fnames: true,
-        keep_classnames: true
-      }
-    },
+    minify: false, // Disable minification for better debugging
+    sourcemap: 'inline',
     cssCodeSplit: false,
-    sourcemap: true,
     commonjsOptions: {
       include: [
         /node_modules/,
@@ -96,7 +83,8 @@ export default defineConfig({
         'top-level-await': true
       },
       jsx: 'automatic',
-      platform: 'browser'
+      platform: 'browser',
+      keepNames: true
     }
   }
 })
