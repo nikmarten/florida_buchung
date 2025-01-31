@@ -3,13 +3,18 @@ FROM node:18-alpine as build
 
 WORKDIR /app
 
+# Install build dependencies
+RUN apk add --no-cache python3 make g++
+
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies with clean npm cache
+# Clean install dependencies
 RUN npm cache clean --force && \
-    npm install --legacy-peer-deps --force && \
-    npm install @vitejs/plugin-react@4.2.1 @babel/plugin-transform-react-jsx@7.23.4 --save-dev --legacy-peer-deps
+    rm -rf node_modules && \
+    npm install --legacy-peer-deps && \
+    npm install @vitejs/plugin-react@4.2.1 --save-dev && \
+    npm dedupe
 
 # Copy source code
 COPY . .
@@ -17,6 +22,9 @@ COPY . .
 # Create production build with increased memory
 ENV NODE_OPTIONS="--max-old-space-size=4096"
 ENV NODE_ENV=production
+ENV VITE_USER_NODE_ENV=production
+
+# Build the application
 RUN npm run build
 
 # Serve stage

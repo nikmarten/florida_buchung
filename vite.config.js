@@ -3,17 +3,7 @@ import react from '@vitejs/plugin-react'
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [
-    react({
-      jsxRuntime: 'automatic',
-      jsxImportSource: 'react',
-      babel: {
-        plugins: [
-          ['@babel/plugin-transform-react-jsx', { runtime: 'automatic' }]
-        ]
-      }
-    })
-  ],
+  plugins: [react()],
   server: {
     port: 3000,
     proxy: {
@@ -34,10 +24,10 @@ export default defineConfig({
     cssCodeSplit: false,
     commonjsOptions: {
       include: [/node_modules/],
-      transformMixedEsModules: true
+      transformMixedEsModules: true,
+      requireReturnsDefault: 'auto'
     },
     rollupOptions: {
-      external: ['react/jsx-runtime'],
       output: {
         manualChunks: {
           'vendor': ['react', 'react-dom', 'react-router-dom', 'react-redux'],
@@ -54,11 +44,9 @@ export default defineConfig({
     }
   },
   resolve: {
+    mainFields: ['browser', 'module', 'main'],
+    extensions: ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json'],
     alias: {
-      'react/jsx-runtime': 'react/jsx-runtime.js',
-      'react/jsx-dev-runtime': 'react/jsx-dev-runtime.js',
-      'react': 'react/index.js',
-      'react-dom': 'react-dom/index.js',
       '@mui/system': '@mui/system/esm'
     }
   },
@@ -77,8 +65,10 @@ export default defineConfig({
       'date-fns'
     ],
     esbuildOptions: {
-      mainFields: ['module', 'main'],
-      resolveExtensions: ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json'],
+      target: 'es2015',
+      supported: {
+        'top-level-await': true
+      },
       jsx: 'automatic'
     }
   }
