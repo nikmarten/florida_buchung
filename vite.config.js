@@ -23,6 +23,7 @@ export default defineConfig({
     minify: 'terser',
     cssCodeSplit: false,
     rollupOptions: {
+      external: ['date-fns/locale'],
       output: {
         manualChunks: {
           'vendor': ['react', 'react-dom', 'react-router-dom'],
@@ -32,17 +33,17 @@ export default defineConfig({
             '@mui/icons-material',
             '@mui/x-date-pickers',
             '@emotion/react',
-            '@emotion/styled',
-            'date-fns',
-            '@date-io/date-fns'
-          ]
+            '@emotion/styled'
+          ],
+          'date': ['date-fns']
         }
       }
     }
   },
   resolve: {
     alias: {
-      '@mui/system': '@mui/system/esm'
+      '@mui/system': '@mui/system/esm',
+      'date-fns': 'date-fns/esm'
     }
   },
   optimizeDeps: {
@@ -56,8 +57,11 @@ export default defineConfig({
       '@mui/x-date-pickers',
       '@emotion/react',
       '@emotion/styled',
-      'date-fns',
-      '@date-io/date-fns'
-    ]
+      'date-fns'
+    ],
+    esbuildOptions: {
+      mainFields: ['module', 'main'],
+      resolveExtensions: ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json']
+    }
   }
 })
