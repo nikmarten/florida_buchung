@@ -251,12 +251,27 @@ export default function EquipmentList() {
                     }
                   }}
                 >
-                  <CardMedia
-                    component="img"
-                    height="160"
-                    image={equipment.imageUrl || 'https://via.placeholder.com/200'}
-                    alt={equipment.name}
-                  />
+                  <Box sx={{ 
+                    position: 'relative',
+                    paddingTop: '75%', // 4:3 Aspect Ratio
+                    width: '100%',
+                    backgroundColor: 'grey.100'
+                  }}>
+                    <CardMedia
+                      component="img"
+                      image={equipment.imageUrl || 'https://via.placeholder.com/200'}
+                      alt={equipment.name}
+                      sx={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'contain',
+                        padding: 1,
+                      }}
+                    />
+                  </Box>
                   <CardContent sx={{ 
                     flexGrow: 1, 
                     display: 'flex', 

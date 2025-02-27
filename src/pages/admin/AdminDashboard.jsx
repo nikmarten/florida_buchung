@@ -14,7 +14,10 @@ import {
   Container,
   Paper,
   Divider,
-  ListItemButton
+  ListItemButton,
+  BottomNavigation,
+  BottomNavigationAction,
+  Fab
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import DashboardIcon from '@mui/icons-material/Dashboard';
@@ -25,6 +28,7 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import AdminProducts from '../../components/admin/AdminProducts';
 import AdminCategories from '../../components/admin/AdminCategories';
 import AdminBookingsPage from '../../pages/AdminBookingsPage';
+import AdminDashboardHome from '../../components/admin/AdminDashboardHome';
 
 const drawerWidth = 280;
 
@@ -49,6 +53,21 @@ export default function AdminDashboard() {
   const handleMenuClick = (path) => {
     navigate(path);
     if (isMobile) setMobileOpen(false);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('adminAuthenticated');
+    navigate('/booking');
+  };
+
+  // Bestimme den aktuellen Navigationswert basierend auf dem Pfad
+  const getCurrentNavValue = () => {
+    const path = location.pathname;
+    if (path === '/admin') return 0;
+    if (path === '/admin/products') return 1;
+    if (path === '/admin/categories') return 2;
+    if (path === '/admin/bookings') return 3;
+    return 0;
   };
 
   const currentPath = location.pathname;
@@ -135,10 +154,7 @@ export default function AdminDashboard() {
       
       <Box sx={{ p: 2 }}>
         <ListItemButton
-          onClick={() => {
-            localStorage.removeItem('adminAuthenticated');
-            navigate('/booking');
-          }}
+          onClick={handleLogout}
           sx={{
             borderRadius: 2,
             mb: 2,
@@ -172,178 +188,177 @@ export default function AdminDashboard() {
   );
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh' }}>
-      <Box sx={{ display: 'flex', flex: 1 }}>
-        {/* Admin Sidebar */}
-        <Box
-          component="nav"
-          sx={{ 
-            width: { md: drawerWidth }, 
-            flexShrink: { md: 0 }
-          }}
-        >
-          {/* Mobile Drawer */}
-          <Drawer
-            variant="temporary"
-            open={mobileOpen}
-            onClose={handleDrawerToggle}
-            ModalProps={{ keepMounted: true }}
-            sx={{
-              display: { xs: 'block', md: 'none' },
-              '& .MuiDrawer-paper': { 
-                boxSizing: 'border-box', 
-                width: drawerWidth,
-                backgroundColor: 'background.paper',
-                backgroundImage: 'none',
-                mt: 8
-              },
-            }}
-          >
-            {drawer}
-          </Drawer>
-
-          {/* Desktop Drawer */}
-          <Drawer
-            variant="permanent"
-            sx={{
-              display: { xs: 'none', md: 'block' },
-              '& .MuiDrawer-paper': { 
-                boxSizing: 'border-box', 
-                width: drawerWidth,
-                backgroundColor: 'background.paper',
-                backgroundImage: 'none',
-                borderRight: '1px solid',
-                borderColor: 'divider',
-                position: 'relative',
-                height: '100%',
-                mt: 8
-              },
-            }}
-            open
-          >
-            {drawer}
-          </Drawer>
-        </Box>
-
-        {/* Main Content */}
-        <Box
-          component="main"
-          sx={{
-            flexGrow: 1,
-            p: 3,
-            backgroundColor: theme.palette.mode === 'dark' 
-              ? 'rgba(0, 0, 0, 0.1)'
-              : 'rgba(0, 0, 0, 0.02)',
-            minHeight: '100%'
-          }}
-        >
-          <Container maxWidth="xl">
-            <Paper 
-              elevation={0}
-              sx={{ 
-                p: 3,
-                backgroundColor: 'background.paper',
-                borderRadius: 3,
-                boxShadow: theme.shadows[1]
-              }}
-            >
-              <Routes>
-                <Route index element={<AdminDashboardHome />} />
-                <Route path="products" element={<AdminProducts />} />
-                <Route path="categories" element={<AdminCategories />} />
-                <Route path="bookings" element={<AdminBookingsPage />} />
-              </Routes>
-            </Paper>
-          </Container>
-        </Box>
-      </Box>
-    </Box>
-  );
-}
-
-function AdminDashboardHome() {
-  const theme = useTheme();
-  const navigate = useNavigate();
-  
-  return (
-    <Box>
-      <Typography 
-        variant="h4" 
-        gutterBottom 
+    <Box sx={{ 
+      display: 'flex', 
+      minHeight: '100vh',
+      maxWidth: '100vw',
+      overflow: 'hidden',
+      pb: isMobile ? 7 : 0,
+      pt: 8 // Für den Header
+    }}>
+      {/* Admin Sidebar */}
+      <Box
+        component="nav"
         sx={{ 
-          color: theme.palette.primary.main, 
-          fontWeight: 'bold',
-          mb: 4
+          width: { md: drawerWidth }, 
+          flexShrink: { md: 0 }
         }}
       >
-        Willkommen im Verwaltungsbereich
-      </Typography>
+        {/* Mobile Drawer */}
+        <Drawer
+          variant="temporary"
+          open={mobileOpen}
+          onClose={handleDrawerToggle}
+          ModalProps={{ keepMounted: true }}
+          sx={{
+            display: { xs: 'block', md: 'none' },
+            '& .MuiDrawer-paper': { 
+              boxSizing: 'border-box', 
+              width: drawerWidth,
+              backgroundColor: 'background.paper',
+              backgroundImage: 'none',
+              mt: 8
+            },
+          }}
+        >
+          {drawer}
+        </Drawer>
 
-      <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))' }}>
-        {menuItems.slice(1).map((item) => (
-          <Paper
-            key={item.path}
-            sx={{
-              p: 3,
+        {/* Desktop Drawer */}
+        <Drawer
+          variant="permanent"
+          sx={{
+            display: { xs: 'none', md: 'block' },
+            '& .MuiDrawer-paper': { 
+              boxSizing: 'border-box', 
+              width: drawerWidth,
+              backgroundColor: 'background.paper',
+              backgroundImage: 'none',
+              borderRight: '1px solid',
+              borderColor: 'divider',
+              position: 'relative',
               height: '100%',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: 2,
-              cursor: 'pointer',
-              transition: 'all 0.2s',
-              borderRadius: 2,
-              border: '1px solid',
-              borderColor: theme.palette.divider,
-              '&:hover': {
-                transform: 'translateY(-4px)',
-                boxShadow: theme.shadows[4],
-                borderColor: theme.palette.primary.main,
-                '& .icon-wrapper': {
-                  backgroundColor: theme.palette.primary.main,
-                  color: theme.palette.primary.contrastText,
-                }
-              }
+              mt: 8
+            },
+          }}
+          open
+        >
+          {drawer}
+        </Drawer>
+      </Box>
+
+      {/* Main Content */}
+      <Box
+        component="main"
+        sx={{
+          flexGrow: 1,
+          width: { xs: '100%', md: `calc(100% - ${drawerWidth}px)` },
+          height: '100%',
+          overflow: 'auto',
+          backgroundColor: theme.palette.mode === 'dark' 
+            ? 'rgba(0, 0, 0, 0.1)'
+            : 'rgba(0, 0, 0, 0.02)',
+          position: 'relative'
+        }}
+      >
+        <Container 
+          maxWidth={false} 
+          sx={{ 
+            p: { xs: 1, sm: 2, md: 3 },
+            maxWidth: '100%'
+          }}
+        >
+          <Paper 
+            elevation={0}
+            sx={{ 
+              p: { xs: 2, sm: 3 },
+              backgroundColor: 'background.paper',
+              borderRadius: 3,
+              boxShadow: theme.shadows[1],
+              overflow: 'hidden'
             }}
-            onClick={() => navigate(item.path)}
           >
-            <Box 
-              className="icon-wrapper"
-              sx={{ 
-                p: 2, 
-                borderRadius: '50%', 
-                backgroundColor: theme.palette.mode === 'dark'
-                  ? 'rgba(255, 255, 255, 0.05)'
-                  : 'rgba(0, 0, 0, 0.04)',
-                color: theme.palette.primary.main,
-                transition: 'all 0.2s'
-              }}
-            >
-              {item.icon}
-            </Box>
-            <Typography 
-              variant="h6"
-              sx={{ 
-                fontWeight: 500,
-                textAlign: 'center'
-              }}
-            >
-              {item.label}
-            </Typography>
-            <Typography 
-              variant="body2" 
-              color="text.secondary"
-              sx={{ 
-                textAlign: 'center',
-                mt: 1
-              }}
-            >
-              {item.path === '/admin/products' && 'Verwalten Sie Ihr Produktinventar'}
-              {item.path === '/admin/categories' && 'Organisieren Sie Ihre Produktkategorien'}
-              {item.path === '/admin/bookings' && 'Überwachen Sie aktive Buchungen'}
-            </Typography>
+            <Routes>
+              <Route index element={<AdminDashboardHome />} />
+              <Route path="products" element={<AdminProducts />} />
+              <Route path="categories" element={<AdminCategories />} />
+              <Route path="bookings" element={<AdminBookingsPage />} />
+            </Routes>
           </Paper>
-        ))}
+        </Container>
+
+        {/* Mobile Bottom Navigation */}
+        {isMobile && (
+          <>
+            {/* Logout FAB */}
+            <Fab
+              color="error"
+              size="medium"
+              onClick={handleLogout}
+              sx={{
+                position: 'fixed',
+                right: 16,
+                bottom: 80,
+                zIndex: 1000
+              }}
+            >
+              <LogoutIcon />
+            </Fab>
+
+            {/* Bottom Navigation */}
+            <Paper
+              sx={{
+                position: 'fixed',
+                bottom: 0,
+                left: 0,
+                right: 0,
+                zIndex: 1000,
+                borderTop: `1px solid ${theme.palette.divider}`
+              }}
+              elevation={3}
+            >
+              <BottomNavigation
+                value={getCurrentNavValue()}
+                onChange={(event, newValue) => {
+                  switch (newValue) {
+                    case 0:
+                      navigate('/admin');
+                      break;
+                    case 1:
+                      navigate('/admin/products');
+                      break;
+                    case 2:
+                      navigate('/admin/categories');
+                      break;
+                    case 3:
+                      navigate('/admin/bookings');
+                      break;
+                    default:
+                      break;
+                  }
+                }}
+                showLabels
+              >
+                <BottomNavigationAction 
+                  label="Dashboard" 
+                  icon={<DashboardIcon />} 
+                />
+                <BottomNavigationAction 
+                  label="Produkte" 
+                  icon={<InventoryIcon />} 
+                />
+                <BottomNavigationAction 
+                  label="Kategorien" 
+                  icon={<CategoryIcon />} 
+                />
+                <BottomNavigationAction 
+                  label="Buchungen" 
+                  icon={<BookingsIcon />} 
+                />
+              </BottomNavigation>
+            </Paper>
+          </>
+        )}
       </Box>
     </Box>
   );

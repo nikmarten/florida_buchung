@@ -39,8 +39,6 @@ export default defineConfig({
     commonjsOptions: {
       include: [
         /node_modules/,
-        /date-fns/,
-        /date-fns\/.*/
       ],
       transformMixedEsModules: true,
       requireReturnsDefault: 'auto',
@@ -50,14 +48,9 @@ export default defineConfig({
       output: {
         manualChunks: {
           'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-          'mui-vendor': ['@mui/material', '@mui/icons-material'],
+          'mui-vendor': ['@mui/material', '@mui/icons-material', '@mui/system'],
+          'mui-pickers': ['@mui/x-date-pickers', '@mui/x-date-pickers-pro'],
           'redux': ['react-redux', '@reduxjs/toolkit'],
-          'mui': [
-            '@mui/system',
-            '@mui/x-date-pickers',
-            '@emotion/react',
-            '@emotion/styled'
-          ],
           'date-fns': ['date-fns']
         },
         inlineDynamicImports: false
@@ -65,12 +58,8 @@ export default defineConfig({
     }
   },
   resolve: {
-    mainFields: ['browser', 'module', 'main', 'jsnext:main'],
     extensions: ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json'],
-    alias: {
-      '@mui/system': '@mui/system/esm',
-      'date-fns': 'date-fns/esm'
-    }
+    mainFields: ['module', 'main', 'browser']
   },
   optimizeDeps: {
     include: [
@@ -83,10 +72,10 @@ export default defineConfig({
       '@mui/icons-material',
       '@mui/system',
       '@mui/x-date-pickers',
+      '@mui/x-date-pickers-pro',
       '@emotion/react',
       '@emotion/styled',
-      'date-fns',
-      'date-fns/locale'
+      'date-fns'
     ],
     esbuildOptions: {
       target: 'es2015',
@@ -94,10 +83,7 @@ export default defineConfig({
         'top-level-await': true
       },
       jsx: 'automatic',
-      platform: 'browser',
-      keepNames: true,
-      sourcemap: true,
-      sourcesContent: true
+      platform: 'browser'
     }
   }
 })
