@@ -19,41 +19,14 @@ export default defineConfig({
     'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV)
   },
   build: {
-    target: 'es2015',
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: false,
-        pure_funcs: ['console.info', 'console.debug', 'console.trace'],
-      },
-      format: {
-        comments: false,
-        keep_quoted_props: true,
-        keep_numbers: true,
-        keep_classnames: true,
-        keep_fnames: true,
-      },
-    },
-    sourcemap: true,
-    cssCodeSplit: false,
-    commonjsOptions: {
-      include: [
-        /node_modules/,
-      ],
-      transformMixedEsModules: true,
-      requireReturnsDefault: 'auto',
-      defaultIsModuleExports: true
-    },
+    sourcemap: false,
+    minify: 'esbuild',
     rollupOptions: {
       output: {
         manualChunks: {
-          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-          'mui-vendor': ['@mui/material', '@mui/icons-material', '@mui/system'],
-          'mui-pickers': ['@mui/x-date-pickers', '@mui/x-date-pickers-pro'],
-          'redux': ['react-redux', '@reduxjs/toolkit'],
-          'date-fns': ['date-fns']
-        },
-        inlineDynamicImports: false
+          vendor: ['react', 'react-dom', 'react-router-dom'],
+          mui: ['@mui/material', '@mui/icons-material']
+        }
       }
     }
   },
