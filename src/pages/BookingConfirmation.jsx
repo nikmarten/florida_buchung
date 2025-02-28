@@ -203,8 +203,8 @@ export default function BookingConfirmation() {
                         }}>
                           <Box
                             component="img"
-                            src={item.productId?.imageUrl || 'https://via.placeholder.com/200'}
-                            alt={item.productId?.name || 'Produkt'}
+                            src={item.product?.imageUrl || 'https://via.placeholder.com/200'}
+                            alt={item.product?.name || 'Produkt'}
                             sx={{
                               width: { xs: '100%', sm: 150 },
                               height: { xs: 200, sm: 100 },
@@ -214,7 +214,7 @@ export default function BookingConfirmation() {
                           />
                           <Box sx={{ flex: 1 }}>
                             <Typography variant="h6">
-                              {item.productId?.name || 'Unbekanntes Produkt'}
+                              {item.product?.name || 'Unbekanntes Produkt'}
                             </Typography>
                             <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
                               Zeitraum: {formatDate(item.startDate)} - {formatDate(item.endDate)}
