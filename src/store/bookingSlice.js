@@ -95,7 +95,7 @@ const bookingSlice = createSlice({
       })
       .addCase(fetchBookings.fulfilled, (state, action) => {
         state.status = 'succeeded';
-        state.items = action.payload;
+        state.items = action.payload.filter(booking => booking.status !== 'cancelled');
       })
       .addCase(fetchBookings.rejected, (state, action) => {
         state.status = 'failed';

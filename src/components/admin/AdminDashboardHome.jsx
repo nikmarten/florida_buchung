@@ -418,6 +418,7 @@ export default function AdminDashboardHome() {
                       const isToday = isSameDay(day, new Date());
                       const isCurrentMonth = isSameMonth(day, selectedDate);
                       const dayBookings = bookings.filter(booking =>
+                        booking.status !== 'cancelled' &&
                         booking.items.some(item =>
                           isWithinInterval(day, {
                             start: new Date(item.startDate),
