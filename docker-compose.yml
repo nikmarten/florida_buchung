@@ -13,6 +13,8 @@ services:
       - VITE_API_URL=/api
     depends_on:
       - backend
+    networks:
+      - app-network
 
   backend:
     build:
@@ -23,10 +25,12 @@ services:
       - "5001:5001"
     environment:
       - NODE_ENV=production
-      - MONGODB_URI=mongodb://mongodb:27017/florida_technik
+      - MONGODB_URI=mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@mongodb:27017/${MONGO_INITDB_DATABASE}?authSource=admin
       - PORT=5001
     depends_on:
       - mongodb
+    networks:
+      - app-network
 
   mongodb:
     image: mongo:latest
@@ -34,11 +38,18 @@ services:
     ports:
       - "27017:27017"
     volumes:
-      - mongodb_data:/data/db
+      - ./data/mongodb:/data/db
     environment:
-      - MONGO_INITDB_DATABASE=florida_technik
-    command: ["--auth"]
+      - MONGO_INITDB_DATABASE=${MONGO_INITDB_DATABASE}
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
+    networks:
+      - app-network
 
 volumes:
   mongodb_data:
-    driver: local 
+    driver: local
+
+networks:
+  app-network:
+    driver: bridge 
