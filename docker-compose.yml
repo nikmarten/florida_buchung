@@ -21,12 +21,12 @@ services:
       context: .
       dockerfile: Dockerfile.backend
     restart: unless-stopped
-    ports:
-      - "5001:5001"
     environment:
       - NODE_ENV=production
       - MONGODB_URI=mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@mongodb:27017/${MONGO_INITDB_DATABASE}?authSource=admin
       - PORT=5001
+      - CORS_ORIGIN=http://frontend
+      - API_URL=/api
     depends_on:
       - mongodb
     networks:
@@ -35,8 +35,6 @@ services:
   mongodb:
     image: mongo:latest
     restart: unless-stopped
-    ports:
-      - "27017:27017"
     volumes:
       - ./data/mongodb:/data/db
     environment:
