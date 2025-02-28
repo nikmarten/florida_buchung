@@ -44,14 +44,27 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Health check route - both at root and /api path
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok', message: 'Backend server is running' });
+});
+
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ status: 'ok', message: 'Backend server is running' });
+});
+
 // API Routes
 app.use('/api/products', productsRouter);
 app.use('/api/categories', categoriesRouter);
 app.use('/api/bookings', bookingsRouter);
 
-// Health check route
-app.get('/api/health', (req, res) => {
-  res.status(200).json({ status: 'ok' });
+// Debug route to check API connectivity
+app.get('/api/debug', (req, res) => {
+  res.status(200).json({
+    message: 'API is working',
+    environment: process.env.NODE_ENV,
+    timestamp: new Date().toISOString()
+  });
 });
 
 // Error handling middleware
@@ -68,7 +81,7 @@ mongoose.connect(process.env.MONGODB_URI)
   .then(() => {
     console.log('Connected to MongoDB');
     const PORT = process.env.PORT || 5001;
-    app.listen(PORT, () => {
+    app.listen(PORT, '0.0.0.0', () => {
       console.log(`Server is running on port ${PORT}`);
     });
   })
