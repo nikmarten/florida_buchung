@@ -1,7 +1,7 @@
 import express from 'express';
 import Booking from '../models/Booking.js';
 import Product from '../models/Product.js';
-import { sendNewBookingNotification } from '../services/emailService.js';
+import { sendNewBookingNotification, sendBookingConfirmation } from '../services/emailService.js';
 
 const router = express.Router();
 
@@ -116,11 +116,14 @@ router.post('/', async (req, res) => {
         select: 'name description imageUrl category quantity lockPeriodDays'
       });
 
-    // Sende E-Mail-Benachrichtigung
+    // Sende E-Mail-Benachrichtigungen
     try {
+      // Sende Bestätigung an den Kunden
+      await sendBookingConfirmation(populatedBooking);
+      // Sende Benachrichtigung an die Administratoren
       await sendNewBookingNotification(populatedBooking);
     } catch (error) {
-      console.error('Fehler beim Senden der E-Mail-Benachrichtigung:', error);
+      console.error('Fehler beim Senden der E-Mail-Benachrichtigungen:', error);
       // Wir werfen hier keinen Fehler, da die Buchung trotzdem erfolgreich war
     }
 

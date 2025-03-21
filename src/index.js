@@ -1,36 +1,12 @@
 import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
-import dotenv from 'dotenv';
-
-// ES Module __dirname equivalent
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-// Load environment variables based on NODE_ENV
-console.log('Initial NODE_ENV:', process.env.NODE_ENV);
-
-// For development with nodemon, force development mode
-if (process.argv[1].includes('nodemon') || process.env.NODE_ENV === 'development') {
-  process.env.NODE_ENV = 'development';
-  dotenv.config({ path: '.env.development' });
-} else {
-  dotenv.config({ path: '.env' });
-}
+import './config/env.js';  // Lade Umgebungsvariablen zuerst
 
 // Import routes after environment variables are loaded
 import productsRouter from './routes/products.js';
 import categoriesRouter from './routes/categories.js';
 import bookingsRouter from './routes/bookings.js';
-
-// Debug logging
-console.log('NODE_ENV after config:', process.env.NODE_ENV);
-console.log('MONGODB_URI:', process.env.MONGODB_URI);
-console.log('PORT:', process.env.PORT);
-console.log('CORS_ORIGIN:', process.env.CORS_ORIGIN);
 
 const app = express();
 
